@@ -143,6 +143,8 @@ button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:poin
 </section>
 </main><script>
 let parts=JSON.parse(localStorage.getItem('cutlist_parts_v2')||'[]');
+// Normalize legacy/localStorage values so numeric comparisons and layout packing remain reliable.
+parts=Array.isArray(parts)?parts.map(p=>({...p,l:+p.l||0,w:+p.w||0,q:Math.max(1,Math.floor(+p.q||1)),thick:+String(p.thick||18).replace(/[^0-9.]/g,'')||18,price:+p.price||0,grain:!!p.grain})):[];
 let materials=JSON.parse(localStorage.getItem('cutlist_materials_v2')||'null')||[
  {id:1,name:'Multiplek 18 mm',l:122,w:244,unit:'lembar',qty:0,price:287000},
  {id:2,name:'Multiplek 9 mm',l:122,w:244,unit:'lembar',qty:0,price:157000},
@@ -187,7 +189,7 @@ function commit(r){
  if(!(l>0&&w>0))return alert('Panjang dan lebar harus lebih dari 0.');
  p.name=r.querySelector('.en').value.trim()||'Komponen';p.l=l*10;p.w=w*10;p.q=q;p.thick=+r.querySelector('.et').value;syncCuttingToMaterial();
 }
-function expand(){let a=[];parts.forEach(p=>{for(let i=0;i<p.q;i++)a.push({...p,unit:i+1})});return a.sort((a,b)=>b.l*b.w-a.l*a.w)}
+function expand(){let a=[];parts.forEach(p=>{const thick=+String(p.thick||18).replace(/[^0-9.]/g,'')||18;const l=+p.l||0,w=+p.w||0,q=Math.max(0,Math.floor(+p.q||0));for(let i=0;i<q;i++)a.push({...p,l,w,q:1,thick,unit:i+1})});return a.sort((a,b)=>b.l*b.w-a.l*a.w)}
 function packGroup(items,w,h){
   const sheets=[];
   const k=Math.max(0,+$('kerf').value||3);
@@ -225,7 +227,7 @@ function packGroup(items,w,h){
   }
   return sheets;
 }
-function allSheets(){let {w,h}=dims(),out=[];[9,12,15,18].forEach(t=>{let items=expand().filter(p=>p.thick===t);if(items.length)packGroup(items,w,h).forEach(s=>{s.thick=t;out.push(s)})});return out}
+function allSheets(){let {w,h}=dims(),out=[];const expanded=expand();[9,12,15,18].forEach(t=>{let items=expanded.filter(p=>+String(p.thick||18).replace(/[^0-9.]/g,'')===t);if(items.length)packGroup(items,w,h).forEach(s=>{s.thick=t;out.push(s)})});return out}
 function renderHPP(){
  const area=Math.max(1,+$('effectiveArea').value||28800);
  const markup=Math.max(0,+$('hppMarkup').value||0);
