@@ -189,6 +189,7 @@ function commit(r){
  if(!(l>0&&w>0))return alert('Panjang dan lebar harus lebih dari 0.');
  p.name=r.querySelector('.en').value.trim()||'Komponen';p.l=l*10;p.w=w*10;p.q=q;p.thick=+r.querySelector('.et').value;syncCuttingToMaterial();
 }
+function parseThick(v){ const n=Number(String(v ?? '').replace(/[^0-9.]/g,'')); return [9,12,15,18].includes(n)?n:18; }
 function expand(){return normalizedParts()}
 function sheetDims(){
   const raw=String($('sheetSize')?.value||'1220x2440');
