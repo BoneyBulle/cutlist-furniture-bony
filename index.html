@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CutList Furniture">
+<title>CutList Furniture — Multiplek</title>
+<style>
+:root{--bg:#f3f4f6;--card:#fff;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--blue:#2563eb;--danger:#b91c1c}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#111827;color:#fff;padding:18px 16px;position:sticky;top:0;z-index:20}header h1{margin:0;font-size:22px}header p{margin:4px 0 0;color:#cbd5e1;font-size:12px}
+main{max-width:1100px;margin:auto;padding:12px 12px 90px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin:10px 0;box-shadow:0 1px 2px #0001}
+h2{font-size:16px;margin:0 0 12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}
+label{display:block;font-size:12px;font-weight:700;margin:6px 0 5px}input,select,button{font:inherit}
+input,select{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;font-size:16px;min-height:44px}
+button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer}.primary{background:#111827;color:#fff}.secondary{background:#e5e7eb;color:#111827}.danger{background:#fee2e2;color:var(--danger)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1;min-width:130px}
+.tabs{display:flex;gap:8px;overflow:auto;margin:10px 0}.tab{white-space:nowrap;background:#e5e7eb}.tab.active{background:#111827;color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.kpi{background:#f8fafc;border-radius:12px;padding:12px}.kpi b{display:block;font-size:20px}.kpi span{font-size:11px;color:var(--muted)}
+.tablewrap{overflow:auto}.material-row,.cut-card{border:1px solid #dbe1e8;border-radius:14px;padding:12px;margin:9px 0;background:#fff}
+.rowgrid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto;gap:8px;align-items:end}.cut-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cut-head{display:flex;justify-content:space-between;align-items:center}.cut-meta,.note{font-size:12px;color:var(--muted);line-height:1.45}
+.sheet{border:1px solid #cbd5e1;border-radius:12px;margin:12px 0;padding:10px;background:#fff}.sheet h3{margin:0 0 8px;font-size:13px}
+.canvas{position:relative;background-color:#f8fafc;background-image:linear-gradient(#e2e8f0 1px,transparent 1px),linear-gradient(90deg,#e2e8f0 1px,transparent 1px);background-size:10% 10%;border:1px solid #64748b;overflow:hidden;width:100%;aspect-ratio:122/244}
+.piece{position:absolute;z-index:2;background:#bfdbfe;border:2px solid #2563eb;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;padding:2px;line-height:1.15}
+.piece b{font-size:clamp(7px,1.7vw,12px)}.piece span{font-size:clamp(6px,1.5vw,10px)}
+.empty{text-align:center;padding:20px;color:var(--muted)}
+.totalbox{background:#f8fafc;border-radius:12px;padding:12px;margin-top:10px}.money{font-weight:800}
+@media(max-width:650px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.rowgrid{grid-template-columns:1fr 1fr}.rowgrid .wide{grid-column:1/-1}}
+@media print{header{position:static;background:#fff;color:#111;border-bottom:2px solid #111}header p{color:#555}.no-print{display:none!important}.card{box-shadow:none;border:0}.sheet{page-break-inside:avoid}}
+
+.hpp-wrap{overflow:auto;border:1px solid #dbe1e8;border-radius:10px}
+.hpp-table{width:100%;border-collapse:collapse;min-width:980px;background:#fff}
+.hpp-table th,.hpp-table td{border:1px solid #dbe1e8;padding:7px 8px;font-size:12px;white-space:nowrap}
+.hpp-table th{background:#f8fafc;text-align:center;font-weight:800}
+.hpp-table td.num{text-align:right;font-variant-numeric:tabular-nums}
+.hpp-table .section{background:#eef2f7;font-weight:800}
+.hpp-table .totalrow{background:#f8fafc;font-weight:800}
+.hpp-mobile-note{display:none}
+@media(max-width:650px){.hpp-mobile-note{display:block}.hpp-table{min-width:980px}}
+
+.material-group{border:1px solid #dbe1e8;border-radius:14px;margin:10px 0;background:#fff;overflow:hidden}
+.material-group-title{background:#f8fafc;padding:10px 12px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+.material-detail{padding:10px;border-top:1px solid #e5e7eb}
+.material-grid{display:grid;grid-template-columns:1.5fr .8fr .8fr .7fr 1fr 1fr auto;gap:8px;align-items:end}
+.material-grand{font-weight:800;background:#f8fafc;border-radius:8px;padding:11px;text-align:right}
+.material-group-total{padding:10px 12px;text-align:right;font-weight:800;border-top:1px solid #e5e7eb}
+@media(max-width:800px){.material-grid{grid-template-columns:1fr 1fr}.material-grid .mat-name{grid-column:1/-1}.material-grid .mat-grand{grid-column:1/-1}}
+
+.grand-cost{font-size:18px;font-weight:800;border-top:1px solid #dbe1e8;margin-top:8px;padding-top:10px}
+.sell-price{font-size:21px;font-weight:900;margin-top:8px;padding:12px;border-radius:12px;background:#e0f2fe}
+</style>
+<body><header><h1>CutList Furniture Bony</h1><p>V2.5 • HPP lengkap & Harga Jual Furniture</p></header>
+<main>
+<div class="tabs no-print">
+<button class="tab active" onclick="showTab('project',this)">1. Proyek</button>
+<button class="tab" onclick="showTab('cutting',this)">2. Cutting List</button>
+<button class="tab" onclick="showTab('material',this)">3. Material & HPP</button>
+<button class="tab" onclick="showTab('result',this)">4. Hasil & PDF</button>
+</div>
+
+<section id="project" class="tabpage">
+<div class="card"><h2>Data Proyek</h2><div class="grid">
+<div><label>Nama proyek</label><input id="project" placeholder="Contoh: Kitchen Set Bpk. Andi"></div>
+<div><label>Customer</label><input id="customer" placeholder="Nama customer"></div>
+<div><label>Ukuran lembar</label><select id="sheetSize"><option value="1220x2440">122 × 244 cm</option><option value="1220x2750">122 × 275 cm</option><option value="1830x2440">183 × 244 cm</option></select></div>
+<div><label>Kerf / mata gergaji (mm)</label><input id="kerf" type="number" value="3" min="0" step=".5"></div>
+<div><label>Kertas PDF</label><select id="paper"><option>A4</option><option>A3</option><option>A5</option><option>Letter</option><option>Legal</option></select></div>
+<div><label>Orientasi</label><select id="orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></div>
+</div></div>
+<div class="card"><h2>Manajemen Proyek</h2><div class="actions">
+<button class="primary" onclick="saveProject()">💾 Simpan</button><button class="secondary" onclick="loadProject()">↩ Muat</button>
+<button class="secondary" onclick="exportJSON()">⬇ Backup JSON</button><button class="secondary" onclick="importJSON()">⬆ Import JSON</button>
+<input id="fileImport" type="file" accept=".json" hidden>
+</div><p class="note">Proyek disimpan di perangkat dan dapat dibackup sebagai file JSON.</p></div>
+</section>
+
+<section id="cutting" class="tabpage" style="display:none">
+<div class="card"><h2>Tambah Komponen Cutting List</h2><div class="grid">
+<div><label>Nama komponen</label><input id="name" placeholder="Samping kabinet"></div>
+<div><label>Multiplek / Tebal</label><select id="thick"><option value="9">Multiplek 9 mm</option><option value="12">Multiplek 12 mm</option><option value="15">Multiplek 15 mm</option><option value="18" selected>Multiplek 18 mm</option></select></div>
+<div><label>Panjang (cm)</label><input id="len" type="number" inputmode="decimal" step=".1"></div>
+<div><label>Lebar (cm)</label><input id="wid" type="number" inputmode="decimal" step=".1"></div>
+<div><label>Qty / PCS</label><input id="qty" type="number" inputmode="numeric" min="1" value="1"></div>
+<div><label>Harga multiplek/lembar (Rp)</label><input id="price" type="number" value="287000"></div>
+</div><p><label><input id="grain" type="checkbox" style="width:auto;min-height:0"> Wajib mengikuti arah serat panjang</label></p>
+<div class="actions"><button class="primary" onclick="addPart()">+ Tambah Komponen</button><button class="secondary" onclick="clearParts()">Hapus Semua</button></div></div>
+<div class="card"><h2>Daftar Cutting</h2><p class="note">Edit ukuran dan Qty langsung pada kartu. Setiap PCS dihitung sebagai potongan nyata.</p><div id="list"></div></div>
+</section>
+
+<section id="material" class="tabpage" style="display:none">
+<div class="card"><h2>Material & HPP</h2>
+<p class="note">Material dengan nama/jenis yang sama otomatis dikelompokkan. Cutting List dapat dikirim otomatis ke Material & HPP; Panjang × Lebar × Qty dihitung menjadi Grand Total.</p>
+<div id="materialRows"></div>
+<div class="actions no-print"><button class="primary" onclick="syncCuttingToMaterial()">↻ Ambil dari Cutting List</button><button class="secondary" onclick="addMaterial()">+ Tambah Material</button></div>
+<div class="totalbox">
+ <div>Total luas material: <span class="money" id="materialAreaTotal">0 cm²</span></div>
+ <div>Total material: <span class="money" id="materialTotal">Rp 0</span></div>
+ <div>Waste material (%): <input id="wastePct" type="number" value="5" min="0" step=".5" style="width:100px"></div>
+ <div>HPP Material + Waste: <span class="money" id="hppTotal">Rp 0</span></div>
+</div></div>
+
+<div class="card">
+<h2>Biaya Produksi</h2>
+<div class="grid">
+ <div><label>Tenaga kerja / tukang (Rp)</label><input id="laborCost" type="number" min="0" value="0"></div>
+ <div><label>Finishing / jasa (Rp)</label><input id="finishingCost" type="number" min="0" value="0"></div>
+ <div><label>Transport / pengiriman (Rp)</label><input id="transportCost" type="number" min="0" value="0"></div>
+ <div><label>Aksesoris / hardware (Rp)</label><input id="hardwareCost" type="number" min="0" value="0"></div>
+ <div><label>Biaya lain-lain (Rp)</label><input id="otherCost" type="number" min="0" value="0"></div>
+ <div><label>Overhead produksi (%)</label><input id="productionOverhead" type="number" min="0" value="5" step=".5"></div>
+ <div><label>Profit / keuntungan (%)</label><input id="profitPct" type="number" min="0" value="25" step=".5"></div>
+ <div><label>Diskon / cadangan nego (%)</label><input id="discountPct" type="number" min="0" value="0" step=".5"></div>
+</div>
+<div class="totalbox">
+ <div>HPP Material + Waste: <span class="money" id="costMaterial">Rp 0</span></div>
+ <div>Biaya Produksi: <span class="money" id="costProduction">Rp 0</span></div>
+ <div>Overhead Produksi: <span class="money" id="costOverhead">Rp 0</span></div>
+ <div class="grand-cost">HPP TOTAL: <span class="money" id="totalHPP">Rp 0</span></div>
+ <div>Profit: <span class="money" id="profitValue">Rp 0</span></div>
+ <div class="sell-price">HARGA JUAL: <span class="money" id="sellingPrice">Rp 0</span></div>
+ <div>Harga Jual setelah cadangan nego: <span class="money" id="sellingPriceNegotiation">Rp 0</span></div>
+</div>
+<p class="note">Rumus dasar: HPP = material + waste + tenaga kerja + finishing + transport + hardware + biaya lain + overhead. Harga jual = HPP + profit.</p>
+</div>
+</section>
+
+<section id="result" class="tabpage" style="display:none">
+<div class="card"><h2>Hasil Perhitungan</h2><div class="kpis">
+<div class="kpi"><b id="sheets">0</b><span>Lembar multiplek</span></div><div class="kpi"><b id="pieces">0</b><span>Total PCS</span></div>
+<div class="kpi"><b id="area">0 m²</b><span>Luas komponen</span></div><div class="kpi"><b id="cost">Rp 0</b><span>Estimasi material</span></div></div></div>
+<div class="card"><h2>Layout Potongan per Lembar</h2><div id="layouts"></div></div>
+<div class="card"><h2>Ringkasan RAB</h2><div id="rab"></div><div class="actions no-print"><button class="primary" onclick="printPDF()">🖨 Print / Simpan PDF</button></div></div>
+</section>
+</main><script>
+let parts=JSON.parse(localStorage.getItem('cutlist_parts_v2')||'[]');
+let materials=JSON.parse(localStorage.getItem('cutlist_materials_v2')||'null')||[
+ {id:1,name:'Multiplek 18 mm',l:122,w:244,unit:'lembar',qty:0,price:287000},
+ {id:2,name:'Multiplek 9 mm',l:122,w:244,unit:'lembar',qty:0,price:157000},
+ {id:3,name:'HPL',l:122,w:244,unit:'lembar',qty:0,price:216000},
+ {id:4,name:'Edgebanding',l:0,w:0,unit:'meter',qty:0,price:0},
+ {id:5,name:'Lem',l:0,w:0,unit:'kg',qty:0,price:0}
+];
+const $=id=>document.getElementById(id);
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function rupiah(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n||0)}
+function dims(){let [w,h]=$('sheetSize').value.split('x').map(Number);return{w,h}}
+function showTab(id,btn){
+ document.querySelectorAll('.tabpage').forEach(x=>x.style.display='none');$(id).style.display='block';
+ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active');
+ renderAll();
+}
+function addPart(){
+ let l=+$('len').value,w=+$('wid').value,q=Math.max(1,+$('qty').value||1);
+ if(!(l>0&&w>0))return alert('Isi panjang dan lebar dalam cm.');
+ parts.push({id:Date.now()+Math.random(),name:$('name').value.trim()||'Komponen',l:l*10,w:w*10,q,thick:+$('thick').value,price:+$('price').value||0,grain:$('grain').checked});
+ $('name').value='';$('len').value='';$('wid').value='';$('qty').value=1;syncCuttingToMaterial();
+}
+function clearParts(){if(confirm('Hapus semua cutting list?')){parts=[];materials=materials.filter(m=>m.source!=='cutting' && !/^Multiplek\s+\d+\s*mm$/i.test(String(m.name||'')));saveLocal();renderAll()}}
+function renderList(){
+ if(!parts.length){$('list').innerHTML='<div class="empty">Belum ada komponen.</div>';return}
+ $('list').innerHTML=parts.map((p,i)=>`<div class="cut-card" data-id="${p.id}">
+ <div class="cut-head"><b>Komponen ${i+1}</b><button class="danger del">Hapus</button></div>
+ <label>Nama</label><input class="en" value="${esc(p.name)}">
+ <div class="cut-grid"><div><label>Panjang (cm)</label><input class="el" type="number" step=".1" inputmode="decimal" value="${p.l/10}"></div>
+ <div><label>Lebar (cm)</label><input class="ew" type="number" step=".1" inputmode="decimal" value="${p.w/10}"></div>
+ <div><label>Qty / PCS</label><input class="eq" type="number" min="1" inputmode="numeric" value="${p.q}"></div>
+ <div><label>Tebal</label><select class="et">${[9,12,15,18].map(t=>`<option value="${t}" ${p.thick==t?'selected':''}>${t} mm</option>`).join('')}</select></div></div>
+ <div class="cut-meta">${p.grain?'✓ Arah serat wajib':'Arah serat bebas'} • Harga/lembar ${rupiah(p.price)}</div></div>`).join('');
+ const box=$('list');
+ box.onchange=e=>{let r=e.target.closest('.cut-card');if(r)commit(r)};
+ box.onkeydown=e=>{if(e.key==='Enter'){let r=e.target.closest('.cut-card');if(r){e.preventDefault();commit(r)}}};
+ box.onclick=e=>{if(e.target.classList.contains('del')){let r=e.target.closest('.cut-card'),id=+r.dataset.id;if(confirm('Hapus komponen ini?')){parts=parts.filter(p=>p.id!==id);syncCuttingToMaterial()}}};
+}
+function commit(r){
+ let p=parts.find(x=>x.id===+r.dataset.id);if(!p)return;
+ let l=+r.querySelector('.el').value,w=+r.querySelector('.ew').value,q=Math.max(1,Math.floor(+r.querySelector('.eq').value||1));
+ if(!(l>0&&w>0))return alert('Panjang dan lebar harus lebih dari 0.');
+ p.name=r.querySelector('.en').value.trim()||'Komponen';p.l=l*10;p.w=w*10;p.q=q;p.thick=+r.querySelector('.et').value;syncCuttingToMaterial();
+}
+function expand(){let a=[];parts.forEach(p=>{for(let i=0;i<p.q;i++)a.push({...p,unit:i+1})});return a.sort((a,b)=>b.l*b.w-a.l*a.w)}
+function packGroup(items,w,h){
+  const sheets=[];
+  const k=Math.max(0,+$('kerf').value||3);
+  for(const p of items){
+    let placed=false;
+    for(const s of sheets){
+      for(let fi=0; fi<s.free.length && !placed; fi++){
+        const f=s.free[fi];
+        const options=p.grain ? [false] : [false,true];
+        for(const rot of options){
+          const pw=rot?p.w:p.l, ph=rot?p.l:p.w;
+          if(pw+k<=f.w && ph+k<=f.h){
+            s.items.push({...p,x:f.x,y:f.y,w:pw,h:ph,rot});
+            s.free.splice(fi,1);
+            const rw=pw+k, rh=ph+k;
+            if(f.w-rw>10) s.free.push({x:f.x+rw,y:f.y,w:f.w-rw,h:rh});
+            if(f.h-rh>10) s.free.push({x:f.x,y:f.y+rh,w:f.w,h:f.h-rh});
+            placed=true;
+            break;
+          }
+        }
+      }
+    }
+    if(!placed){
+      let rot=false, pw=p.l, ph=p.w;
+      if(!(pw+k<=w && ph+k<=h) && !p.grain && p.w+k<=w && p.l+k<=h){
+        rot=true; pw=p.w; ph=p.l;
+      }
+      const s={free:[],items:[{...p,x:0,y:0,w:pw,h:ph,rot,oversize:pw>w||ph>h}]};
+      const rw=pw+k, rh=ph+k;
+      if(w-rw>10) s.free.push({x:rw,y:0,w:w-rw,h:rh});
+      if(h-rh>10) s.free.push({x:0,y:rh,w:w,h:h-rh});
+      sheets.push(s);
+    }
+  }
+  return sheets;
+}
+function allSheets(){let {w,h}=dims(),out=[];[9,12,15,18].forEach(t=>{let items=expand().filter(p=>p.thick===t);if(items.length)packGroup(items,w,h).forEach(s=>{s.thick=t;out.push(s)})});return out}
+function renderHPP(){
+ const area=Math.max(1,+$('effectiveArea').value||28800);
+ const markup=Math.max(0,+$('hppMarkup').value||0);
+ const groups={};
+ parts.forEach(p=>{
+   const key=String(p.thick);
+   if(!groups[key]) groups[key]={thick:p.thick,price:+p.price||0,items:[]};
+   groups[key].items.push(p);
+   // Use first non-zero price for the thickness group, but preserve explicit row price.
+   if(!(groups[key].price>0) && p.price>0) groups[key].price=p.price;
+ });
+ let rows=[],baseTotal=0,grandArea=0,grandQty=0;
+ Object.values(groups).sort((a,b)=>a.thick-b.thick).forEach(g=>{
+   rows.push(`<tr class="section"><td colspan="10">Multiplek ${g.thick} mm — Harga/lembar ${rupiah(g.price)}</td></tr>`);
+   g.items.forEach(p=>{
+     const total=p.l*p.w;
+     const grand=total*p.q;
+     const sheets=grand/area;
+     const hpp=sheets*g.price;
+     baseTotal+=hpp;grandArea+=grand;grandQty+=p.q;
+     rows.push(`<tr>
+       <td>${esc(p.name)}</td>
+       <td class="num">${(p.l/10).toFixed(1)}</td>
+       <td class="num">${(p.w/10).toFixed(1)}</td>
+       <td class="num">${total.toLocaleString('id-ID')}</td>
+       <td class="num">${p.q}</td>
+       <td class="num">${grand.toLocaleString('id-ID')}</td>
+       <td class="num">${area.toLocaleString('id-ID')}</td>
+       <td class="num">${sheets.toFixed(3)}</td>
+       <td class="num">${rupiah(g.price)}</td>
+       <td class="num">${rupiah(hpp)}</td>
+     </tr>`);
+   });
+ });
+ if(!rows.length) rows.push('<tr><td colspan="10" class="empty">Belum ada komponen.</td></tr>');
+ const finalTotal=baseTotal*(1+markup/100);
+ rows.push(`<tr class="totalrow">
+   <td colspan="5">TOTAL</td><td class="num">${grandArea.toLocaleString('id-ID')}</td><td></td><td></td><td></td><td class="num">${rupiah(baseTotal)}</td>
+ </tr>`);
+ $('hppTable').innerHTML=`<div class="hpp-mobile-note note">Geser tabel ke kiri/kanan pada iPhone untuk melihat semua kolom.</div>
+ <div class="hpp-wrap"><table class="hpp-table">
+ <thead><tr>
+ <th>Komponen</th><th>Panjang<br>(cm)</th><th>Lebar<br>(cm)</th><th>Total<br>(cm²)</th><th>Jml<br>(pcs)</th><th>Grand Total<br>(cm²)</th><th>Luas Efektif<br>(cm²)</th><th>Jml<br>(Btg)</th><th>Harga<br>(Btg)</th><th>HPP</th>
+ </tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+ $('hppMaterialTotal').textContent=rupiah(baseTotal);
+ $('hppFinalTotal').textContent=rupiah(finalTotal);
+}
+function calcCompleteHPP(materialHpp){
+ const labor=+$('laborCost').value||0;
+ const finishing=+$('finishingCost').value||0;
+ const transport=+$('transportCost').value||0;
+ const hardware=+$('hardwareCost').value||0;
+ const other=+$('otherCost').value||0;
+ const prodOver=+$('productionOverhead').value||0;
+ const profitPct=+$('profitPct').value||0;
+ const discountPct=+$('discountPct').value||0;
+ const production=labor+finishing+transport+hardware+other;
+ const overhead=production*prodOver/100;
+ const total=materialHpp+production+overhead;
+ const profit=total*profitPct/100;
+ const selling=total+profit;
+ const negotiation=selling*(1+discountPct/100);
+ $('costMaterial').textContent=rupiah(materialHpp);
+ $('costProduction').textContent=rupiah(production);
+ $('costOverhead').textContent=rupiah(overhead);
+ $('totalHPP').textContent=rupiah(total);
+ $('profitValue').textContent=rupiah(profit);
+ $('sellingPrice').textContent=rupiah(selling);
+ $('sellingPriceNegotiation').textContent=rupiah(negotiation);
+ return {materialHpp,production,overhead,total,profit,selling,negotiation};
+}
+function renderResults(){
+ let ss=allSheets(), ex=expand(), ar=ex.reduce((z,p)=>z+p.l*p.w,0);
+ $('sheets').textContent=ss.length;$('pieces').textContent=ex.length;$('area').textContent=(ar/1e6).toFixed(2)+' m²';
+ let matTotal=0,matArea=0;materials.forEach(m=>{matTotal+=(+m.qty||0)*(+m.price||0);matArea+=(+m.l||0)*(+m.w||0)*(+m.qty||0)});$('materialTotal').textContent=rupiah(matTotal);if($('materialAreaTotal'))$('materialAreaTotal').textContent=matArea.toLocaleString('id-ID')+' cm²';
+ let waste=+($('wastePct').value||0),hpp=matTotal*(1+waste/100);
+$('hppTotal').textContent=rupiah(hpp);
+$('cost').textContent=rupiah(hpp);
+calcCompleteHPP(hpp);
+ $('layouts').innerHTML=ss.length?ss.map((s,i)=>{let {w,h}=dims();return `<div class="sheet"><h3>Lembar ${i+1} — Multiplek ${s.thick} mm • ${(w/10)} × ${(h/10)} cm</h3><div class="canvas">${s.items.map(it=>{let x=it.x/w*100,y=it.y/h*100,ww=it.w/w*100,hh=it.h/h*100;return `<div class="piece" style="left:${x}%;top:${y}%;width:${ww}%;height:${hh}%"><b>${esc(it.name)}</b><br><span>PCS ${it.unit} • ${(it.w/10)}×${(it.h/10)} cm</span></div>`}).join('')}</div><div class="note">${s.items.length} PCS • Multiplek ${s.thick} mm</div></div>`}).join(''):'<div class="empty">Belum ada cutting list.</div>';
+ $('rab').innerHTML=`<div class="totalbox"><b>HPP Material + Waste: ${rupiah(hpp)}</b><br>Total lembar multiplek: ${ss.length}<br>Total PCS: ${ex.length}</div>`;
+}
+function normalizeMaterialName(s){
+ return String(s||'').trim().replace(/\s+/g,' ').toLowerCase();
+}
+function materialGroups(){
+ const map=new Map();
+ materials.forEach(m=>{
+   const key=normalizeMaterialName(m.name)||'material';
+   if(!map.has(key)) map.set(key,{key,name:m.name||'Material',items:[]});
+   map.get(key).items.push(m);
+ });
+ return [...map.values()];
+}
+function materialNameForThickness(t){
+ return 'Multiplek '+t+' mm';
+}
+function syncCuttingToMaterial(){
+ if(!parts.length){alert('Cutting List masih kosong. Tambahkan komponen terlebih dahulu.');return;}
+ const grouped=new Map();
+ parts.forEach(p=>{
+   const key=String(p.thick||18)+'|'+(+p.l||0)+'|'+(+p.w||0);
+   if(!grouped.has(key)){
+     const old=materials.find(m=>normalizeMaterialName(m.name)===normalizeMaterialName(materialNameForThickness(p.thick)) && (+m.l||0)===(+p.l||0) && (+m.w||0)===(+p.w||0));
+     grouped.set(key,{
+       id:old?old.id:Date.now()+Math.random(),
+       name:materialNameForThickness(p.thick),
+       l:+p.l/10,w:+p.w/10,
+       qty:+p.q||0,
+       unit:'lembar',
+       price:+p.price||0,
+       source:'cutting'
+     });
+   }else{
+     grouped.get(key).qty+=(+p.q||0);
+     if(!(grouped.get(key).price>0) && p.price>0) grouped.get(key).price=p.price;
+   }
+ });
+ // Preserve manually entered non-cutting materials (HPL, edging, glue, etc.).
+ const manual=materials.filter(m=>m.source!=='cutting' && !/^Multiplek\s+\d+\s*mm$/i.test(String(m.name||'')));
+ materials=[...manual,...grouped.values()];
+ mergeDuplicateMaterials();
+ saveLocal();
+ renderAll();
+ alert('Cutting List berhasil disinkronkan ke Material & HPP.');
+}
+function renderMaterials(){
+ const groups=materialGroups();
+ $('materialRows').innerHTML=groups.length?groups.map(g=>{
+   const groupArea=g.items.reduce((s,m)=>s+(+m.l||0)*(+m.w||0)*(+m.qty||0),0);
+   const groupCost=g.items.reduce((s,m)=>s+(+m.qty||0)*(+m.price||0),0);
+   return `<div class="material-group" data-group="${esc(g.key)}">
+    <div class="material-group-title"><span>${esc(g.name)}</span><span>${groupArea.toLocaleString('id-ID')} cm²</span></div>
+    ${g.items.map(m=>`<div class="material-detail material-row" data-id="${m.id}">
+      <div class="material-grid">
+       <div class="mat-name"><label>Material</label><input class="mn" value="${esc(m.name)}"></div>
+       <div><label>Panjang (cm)</label><input class="ml" type="number" min="0" step=".1" inputmode="decimal" value="${m.l||0}"></div>
+       <div><label>Lebar (cm)</label><input class="mw" type="number" min="0" step=".1" inputmode="decimal" value="${m.w||0}"></div>
+       <div><label>Qty</label><input class="mq" type="number" min="0" step=".01" inputmode="decimal" value="${m.qty||0}"></div>
+       <div><label>Grand Total (cm²)</label><div class="material-grand">${((+m.l||0)*(+m.w||0)*(+m.qty||0)).toLocaleString('id-ID')}</div></div>
+       <div><label>Satuan</label><input class="mu" value="${esc(m.unit||'pcs')}"></div>
+       <div><label>Harga / Qty</label><input class="mp" type="number" min="0" value="${m.price||0}"></div>
+       <button class="danger md">Hapus</button>
+      </div>
+     </div>`).join('')}
+    <div class="material-group-total">Total ${esc(g.name)}: ${groupArea.toLocaleString('id-ID')} cm² • ${rupiah(groupCost)}</div>
+   </div>`;
+ }).join(''):'<div class="empty">Belum ada material.</div>';
+
+ const box=$('materialRows');
+ box.onchange=e=>{
+   const r=e.target.closest('.material-row'); if(!r)return;
+   const m=materials.find(x=>+x.id===+r.dataset.id); if(!m)return;
+   m.name=r.querySelector('.mn').value.trim()||'Material';
+   m.l=+r.querySelector('.ml').value||0;
+   m.w=+r.querySelector('.mw').value||0;
+   m.qty=+r.querySelector('.mq').value||0;
+   m.unit=r.querySelector('.mu').value.trim()||'pcs';
+   m.price=+r.querySelector('.mp').value||0;
+   mergeDuplicateMaterials();
+   saveLocal();renderAll();
+ };
+ box.onkeydown=e=>{
+   if(e.key==='Enter'){
+     const r=e.target.closest('.material-row'); if(r){e.preventDefault();e.target.blur();}
+   }
+ };
+ box.onclick=e=>{
+   if(e.target.classList.contains('md')){
+     const r=e.target.closest('.material-row'); if(!r)return;
+     materials=materials.filter(m=>+m.id!==+r.dataset.id);
+     saveLocal();renderAll();
+   }
+ };
+}
+function mergeDuplicateMaterials(){
+ const map=new Map(), out=[];
+ for(const m of materials){
+   m.source=m.source||'manual'; const key=normalizeMaterialName(m.name);
+   // Only combine exact material + identical dimensions + unit + price.
+   // Different dimensions remain separate detail lines under the same material group.
+   const exact=key+'|'+(+m.l||0)+'|'+(+m.w||0)+'|'+(m.unit||'')+'|'+(+m.price||0);
+   if(map.has(exact)) map.get(exact).qty=(+map.get(exact).qty||0)+(+m.qty||0);
+   else {map.set(exact,m);out.push(m);}
+ }
+ materials=out;
+}
+function addMaterial(){
+ const name=(prompt('Nama/jenis material:','Multiplek 18 mm')||'').trim();
+ if(!name)return;
+ const l=Math.max(0,parseFloat(prompt('Panjang (cm):','122'))||0);
+ const w=Math.max(0,parseFloat(prompt('Lebar (cm):','244'))||0);
+ const q=Math.max(0,parseFloat(prompt('Qty:','1'))||0);
+ const unit=(prompt('Satuan:','lembar')||'lembar').trim()||'lembar';
+ const price=Math.max(0,parseFloat(prompt('Harga per qty (Rp):','287000'))||0);
+ const key=normalizeMaterialName(name);
+ // Group same material; merge if dimensions/unit/price match, otherwise add detail under same group.
+ const existing=materials.find(m=>normalizeMaterialName(m.name)===key && (+m.l||0)===l && (+m.w||0)===w && (m.unit||'')===unit && (+m.price||0)===price);
+ if(existing) existing.qty=(+existing.qty||0)+q;
+ else materials.push({id:Date.now()+Math.random(),name,l,w,qty:q,unit,price,source:'manual'});
+ saveLocal();renderAll();
+}
+function renderAll(){renderList();renderMaterials();renderHPP();renderResults()}
+function projectData(){return{version:'2.0',project:$('project').value,customer:$('customer').value,sheet:$('sheetSize').value,kerf:$('kerf').value,paper:$('paper').value,orientation:$('orientation').value,wastePct:$('wastePct').value,laborCost:$('laborCost').value,finishingCost:$('finishingCost').value,transportCost:$('transportCost').value,hardwareCost:$('hardwareCost').value,otherCost:$('otherCost').value,productionOverhead:$('productionOverhead').value,profitPct:$('profitPct').value,discountPct:$('discountPct').value,effectiveArea:$('effectiveArea').value,hppMarkup:$('hppMarkup').value,parts,materials}}
+function saveLocal(){localStorage.setItem('cutlist_project_v2',JSON.stringify(projectData()));localStorage.setItem('cutlist_parts_v2',JSON.stringify(parts));localStorage.setItem('cutlist_materials_v2',JSON.stringify(materials))}
+function saveProject(){saveLocal();exportJSON();alert('Proyek tersimpan dan backup JSON dibuat.')}
+function exportJSON(){let b=new Blob([JSON.stringify(projectData(),null,2)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=(($('project').value||'proyek-cutlist').replace(/[^\w-]+/g,'_'))+'.json';a.click();URL.revokeObjectURL(u)}
+function importJSON(){$('fileImport').click()}
+$('fileImport').addEventListener('change',e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result);parts=d.parts||[];materials=(d.materials||materials).map(m=>({...m,source:m.source||'manual'}));$('project').value=d.project||'';$('customer').value=d.customer||'';$('sheetSize').value=d.sheet||'1220x2440';$('kerf').value=d.kerf||3;$('paper').value=d.paper||'A4';$('orientation').value=d.orientation||'portrait';$('wastePct').value=d.wastePct||5;
+$('laborCost').value=d.laborCost||0;$('finishingCost').value=d.finishingCost||0;$('transportCost').value=d.transportCost||0;
+$('hardwareCost').value=d.hardwareCost||0;$('otherCost').value=d.otherCost||0;$('productionOverhead').value=d.productionOverhead||5;
+$('profitPct').value=d.profitPct||25;$('discountPct').value=d.discountPct||0;
+$('effectiveArea').value=d.effectiveArea||28800;$('hppMarkup').value=d.hppMarkup||0;saveLocal();renderAll();alert('Proyek berhasil dimuat.')}catch(x){alert('File JSON tidak valid.')}};r.readAsText(f);e.target.value=''})
+function printPDF(){let p=$('paper').value,o=$('orientation').value,s={A4:'210mm 297mm',A3:'297mm 420mm',A5:'148mm 210mm',Letter:'216mm 279mm',Legal:'216mm 356mm'}[p];if(o==='landscape'){let a=s.split(' ');s=a[1]+' '+a[0]}let st=document.getElementById('ps')||document.createElement('style');st.id='ps';st.textContent='@page{size:'+s+';margin:10mm}';document.head.appendChild(st);window.print()}
+['wastePct','laborCost','finishingCost','transportCost','hardwareCost','otherCost','productionOverhead','profitPct','discountPct'].forEach(id=>$(id).addEventListener('input',()=>{saveLocal();renderAll()}));['sheetSize','kerf','project','customer','paper','orientation','effectiveArea','hppMarkup'].forEach(id=>$(id).addEventListener('input',()=>{saveLocal();renderAll()}));
+window.addEventListener('beforeprint',()=>{let p=$('paper').value,o=$('orientation').value,s={A4:'210mm 297mm',A3:'297mm 420mm',A5:'148mm 210mm',Letter:'216mm 279mm',Legal:'216mm 356mm'}[p]||'210mm 297mm';if(o==='landscape'){let a=s.split(' ');s=a[1]+' '+a[0]}let st=document.getElementById('ps')||document.createElement('style');st.id='ps';st.textContent='@page{size:'+s+';margin:10mm}';document.head.appendChild(st);});
+renderAll();
+</script>
+</body>
+</html>
