@@ -58,7 +58,7 @@ button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:poin
 .grand-cost{font-size:18px;font-weight:800;border-top:1px solid #dbe1e8;margin-top:8px;padding-top:10px}
 .sell-price{font-size:21px;font-weight:900;margin-top:8px;padding:12px;border-radius:12px;background:#e0f2fe}
 </style>
-<body><header><h1>CutList Furniture Bony</h1><p>V2.6 • Cutting List + Layout Pembagian Bidang + HPP</p></header>
+<body><header><h1>CutList Furniture Bony</h1><p>V2.7 • Cutting List + Layout Pembagian Bidang + HPP</p></header>
 <main>
 <div class="tabs no-print">
 <button class="tab active" onclick="showTab('project',this)">1. Proyek</button>
@@ -189,45 +189,96 @@ function commit(r){
  if(!(l>0&&w>0))return alert('Panjang dan lebar harus lebih dari 0.');
  p.name=r.querySelector('.en').value.trim()||'Komponen';p.l=l*10;p.w=w*10;p.q=q;p.thick=+r.querySelector('.et').value;syncCuttingToMaterial();
 }
-function expand(){let a=[];parts.forEach(p=>{const thick=+String(p.thick||18).replace(/[^0-9.]/g,'')||18;const l=+p.l||0,w=+p.w||0,q=Math.max(0,Math.floor(+p.q||0));for(let i=0;i<q;i++)a.push({...p,l,w,q:1,thick,unit:i+1})});return a.sort((a,b)=>b.l*b.w-a.l*a.w)}
-function packGroup(items,w,h){
+function expand(){return normalizedParts()}
+function sheetDims(){
+  const raw=String($('sheetSize')?.value||'1220x2440');
+  const a=raw.split('x').map(Number);
+  const w=Number.isFinite(a[0])&&a[0]>0?a[0]:1220;
+  const h=Number.isFinite(a[1])&&a[1]>0?a[1]:2440;
+  return {w,h};
+}
+function dims(){return sheetDims();}
+function normalizedParts(){
+  return (Array.isArray(parts)?parts:[]).flatMap(p=>{
+    const l=Number(p.l)||0, w=Number(p.w)||0, q=Math.max(0,Math.floor(Number(p.q)||0));
+    if(l<=0||w<=0||q<=0)return [];
+    const thick=parseThick(p.thick);
+    return Array.from({length:q},(_,i)=>({...p,l,w,q:1,thick,unit:i+1}));
+  }).sort((a,b)=>(b.l*b.w)-(a.l*a.w));
+}
+function packGroup(items,W,H){
+  // Deterministic shelf/row packing. Coordinates and sizes are in mm.
+  const kerf=Math.max(0,Number($('kerf')?.value)||3);
   const sheets=[];
-  const k=Math.max(0,+$('kerf').value||3);
+  const canPlace=(it,x,y,rw,rh)=>x+rw<=W+0.001 && y+rh<=H+0.001;
   for(const p of items){
     let placed=false;
     for(const s of sheets){
-      for(let fi=0; fi<s.free.length && !placed; fi++){
-        const f=s.free[fi];
-        const options=p.grain ? [false] : [false,true];
-        for(const rot of options){
+      let best=null;
+      for(let row=0;row<s.rows.length;row++){
+        const r=s.rows[row];
+        const candidates=p.grain?[false]:[false,true];
+        for(const rot of candidates){
           const pw=rot?p.w:p.l, ph=rot?p.l:p.w;
-          if(pw+k<=f.w && ph+k<=f.h){
-            s.items.push({...p,x:f.x,y:f.y,w:pw,h:ph,rot});
-            s.free.splice(fi,1);
-            const rw=pw+k, rh=ph+k;
-            if(f.w-rw>10) s.free.push({x:f.x+rw,y:f.y,w:f.w-rw,h:rh});
-            if(f.h-rh>10) s.free.push({x:f.x,y:f.y+rh,w:f.w,h:f.h-rh});
-            placed=true;
-            break;
+          const x=r.x, y=r.y;
+          if(canPlace(p,x,y,pw,ph) && x+pw<=W+0.001 && y+ph<=r.y+r.h+0.001){
+            if(!best || ph<best.ph) best={row,rot,pw,ph,x,y};
           }
         }
       }
+      if(best){
+        const r=s.rows[best.row];
+        s.items.push({...p,x:best.x,y:best.y,w:best.pw,h:best.ph,rot:best.rot,oversize:false});
+        r.x=best.x+best.pw+kerf;
+        r.h=Math.max(r.h,best.ph);
+        placed=true;
+        break;
+      }
+      // Start a new row on this sheet using the remaining vertical space.
+      let nextY=0;
+      for(const r of s.rows) nextY=Math.max(nextY,r.y+r.h+kerf);
+      const candidates=p.grain?[false]:[false,true];
+      let bestRow=null;
+      for(const rot of candidates){
+        const pw=rot?p.w:p.l, ph=rot?p.l:p.w;
+        if(canPlace(p,0,nextY,pw,ph)){bestRow={rot,pw,ph};break;}
+      }
+      if(bestRow){
+        s.rows.push({x:bestRow.pw+kerf,y:nextY,h:bestRow.ph});
+        s.items.push({...p,x:0,y:nextY,w:bestRow.pw,h:bestRow.ph,rot:bestRow.rot,oversize:false});
+        placed=true;
+        break;
+      }
     }
     if(!placed){
-      let rot=false, pw=p.l, ph=p.w;
-      if(!(pw+k<=w && ph+k<=h) && !p.grain && p.w+k<=w && p.l+k<=h){
-        rot=true; pw=p.w; ph=p.l;
+      const candidates=p.grain?[false]:[false,true];
+      let bestSheet=null;
+      for(const rot of candidates){
+        const pw=rot?p.w:p.l, ph=rot?p.l:p.w;
+        if(canPlace(p,0,0,pw,ph)){bestSheet={rot,pw,ph};break;}
       }
-      const s={free:[],items:[{...p,x:0,y:0,w:pw,h:ph,rot,oversize:pw>w||ph>h}]};
-      const rw=pw+k, rh=ph+k;
-      if(w-rw>10) s.free.push({x:rw,y:0,w:w-rw,h:rh});
-      if(h-rh>10) s.free.push({x:0,y:rh,w:w,h:h-rh});
-      sheets.push(s);
+      if(!bestSheet){
+        // Keep an oversized piece visible instead of silently dropping it.
+        const rot=false,pw=p.l,ph=p.w;
+        bestSheet={rot,pw,ph,oversize:true};
+      }
+      sheets.push({rows:[{x:bestSheet.pw+kerf,y:0,h:bestSheet.ph}],items:[{...p,x:0,y:0,w:bestSheet.pw,h:bestSheet.ph,rot:bestSheet.rot,oversize:!!bestSheet.oversize}]});
     }
   }
   return sheets;
 }
-function allSheets(){let {w,h}=dims(),out=[];const expanded=expand();[9,12,15,18].forEach(t=>{let items=expanded.filter(p=>+String(p.thick||18).replace(/[^0-9.]/g,'')===t);if(items.length)packGroup(items,w,h).forEach(s=>{s.thick=t;out.push(s)})});return out}
+function allSheets(){
+  const {w,h}=sheetDims();
+  const expanded=normalizedParts();
+  const out=[];
+  [9,12,15,18].forEach(t=>{
+    const items=expanded.filter(p=>parseThick(p.thick)===t);
+    if(items.length){
+      packGroup(items,w,h).forEach(s=>{s.thick=t;out.push(s)});
+    }
+  });
+  return out;
+}
 function renderHPP(){
  const area=Math.max(1,+$('effectiveArea').value||28800);
  const markup=Math.max(0,+$('hppMarkup').value||0);
@@ -301,7 +352,7 @@ function calcCompleteHPP(materialHpp){
 }
 function layoutHtml(ss, targetId){
  const ex=expand();
- if(!ss.length) return '<div class="empty">Belum ada cutting list.</div>';
+ if(!ss.length){ const count=normalizedParts().length; return `<div class="empty">Belum ada layout yang bisa ditampilkan. Data PCS terbaca: ${count}. Pastikan panjang, lebar, Qty, dan tebal valid.</div>`; }
  const {w,h}=dims();
  const used=ss.reduce((n,s)=>n+s.items.reduce((a,it)=>a+it.w*it.h,0),0);
  const totalArea=w*h*ss.length;
@@ -327,13 +378,21 @@ function layoutHtml(ss, targetId){
    }).join('');
    return `<div class="sheet">
      <div class="sheet-actions"><div><h3>Lembar ${i+1} — Multiplek ${s.thick} mm</h3><div class="sheet-sub">${(w/10).toFixed(1)} × ${(h/10).toFixed(1)} cm • ${s.items.length} PCS • Sisa ± ${(rem/10000).toFixed(2)} m²</div></div><span class="legend-item">${((usedSheet/(w*h))*100).toFixed(1)}% terpakai</span></div>
-     <div class="canvas">${pieces}</div>
+     <div class="canvas" style="aspect-ratio:${w}/${h}">${pieces}</div>
    </div>`;
  }).join('')}`;
 }
 function renderCuttingLayouts(){
  const el=$('cuttingLayouts');
- if(el) el.innerHTML=layoutHtml(allSheets());
+ if(!el)return;
+ try{
+   const ss=allSheets();
+   const count=normalizedParts().length;
+   el.innerHTML=layoutHtml(ss);
+   if(!ss.length && count) el.insertAdjacentHTML('beforeend',`<div class="note" style="margin-top:8px">Debug: ${count} PCS terbaca, ukuran lembar ${sheetDims().w/10} × ${sheetDims().h/10} cm.</div>`);
+ }catch(err){
+   el.innerHTML=`<div class="empty">Layout gagal dihitung: ${esc(err?.message||err)}</div>`;
+ }
 }
 function renderResults(){
  let ss=allSheets(), ex=expand(), ar=ex.reduce((z,p)=>z+p.l*p.w,0);
