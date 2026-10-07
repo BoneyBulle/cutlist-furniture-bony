@@ -29,6 +29,10 @@ button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:poin
 .piece{position:absolute;z-index:2;background:#bfdbfe;border:2px solid #2563eb;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;padding:2px;line-height:1.15}
 .piece b{font-size:clamp(7px,1.7vw,12px)}.piece span{font-size:clamp(6px,1.5vw,10px)}
 .empty{text-align:center;padding:20px;color:var(--muted)}
+.layout-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 12px}.layout-kpi{background:#f8fafc;border-radius:10px;padding:9px}.layout-kpi b{display:block;font-size:16px}.layout-kpi span{font-size:10px;color:var(--muted)}
+.layout-legend{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.legend-item{font-size:11px;padding:5px 8px;border:1px solid #dbe1e8;border-radius:999px;background:#f8fafc}.sheet-actions{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px}.sheet-sub{font-size:11px;color:var(--muted)}
+.piece.rotate{background:#ddd6fe;border-color:#7c3aed}.piece.oversize{background:#fee2e2;border-color:#dc2626;color:#991b1b}
+@media(max-width:650px){.layout-summary{grid-template-columns:1fr 1fr}.layout-summary .layout-kpi:last-child{grid-column:1/-1}}
 .totalbox{background:#f8fafc;border-radius:12px;padding:12px;margin-top:10px}.money{font-weight:800}
 @media(max-width:650px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.rowgrid{grid-template-columns:1fr 1fr}.rowgrid .wide{grid-column:1/-1}}
 @media print{header{position:static;background:#fff;color:#111;border-bottom:2px solid #111}header p{color:#555}.no-print{display:none!important}.card{box-shadow:none;border:0}.sheet{page-break-inside:avoid}}
@@ -54,7 +58,7 @@ button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:poin
 .grand-cost{font-size:18px;font-weight:800;border-top:1px solid #dbe1e8;margin-top:8px;padding-top:10px}
 .sell-price{font-size:21px;font-weight:900;margin-top:8px;padding:12px;border-radius:12px;background:#e0f2fe}
 </style>
-<body><header><h1>CutList Furniture Bony</h1><p>V2.5 • HPP lengkap & Harga Jual Furniture</p></header>
+<body><header><h1>CutList Furniture Bony</h1><p>V2.6 • Cutting List + Layout Pembagian Bidang + HPP</p></header>
 <main>
 <div class="tabs no-print">
 <button class="tab active" onclick="showTab('project',this)">1. Proyek</button>
@@ -90,6 +94,7 @@ button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:poin
 </div><p><label><input id="grain" type="checkbox" style="width:auto;min-height:0"> Wajib mengikuti arah serat panjang</label></p>
 <div class="actions"><button class="primary" onclick="addPart()">+ Tambah Komponen</button><button class="secondary" onclick="clearParts()">Hapus Semua</button></div></div>
 <div class="card"><h2>Daftar Cutting</h2><p class="note">Edit ukuran dan Qty langsung pada kartu. Setiap PCS dihitung sebagai potongan nyata.</p><div id="list"></div></div>
+<div class="card"><h2>Layout Pembagian Bidang</h2><p class="note">Pembagian bidang tampil otomatis dari Cutting List. Setiap lembar dipisahkan berdasarkan ketebalan multiplek. Ukuran bidang, PCS, arah putar, dan sisa area ditampilkan.</p><div id="cuttingLayouts"></div></div>
 </section>
 
 <section id="material" class="tabpage" style="display:none">
@@ -292,17 +297,56 @@ function calcCompleteHPP(materialHpp){
  $('sellingPriceNegotiation').textContent=rupiah(negotiation);
  return {materialHpp,production,overhead,total,profit,selling,negotiation};
 }
+function layoutHtml(ss, targetId){
+ const ex=expand();
+ if(!ss.length) return '<div class="empty">Belum ada cutting list.</div>';
+ const {w,h}=dims();
+ const used=ss.reduce((n,s)=>n+s.items.reduce((a,it)=>a+it.w*it.h,0),0);
+ const totalArea=w*h*ss.length;
+ const wasteArea=Math.max(0,totalArea-used);
+ const byThick={};
+ ss.forEach(s=>byThick[s.thick]=(byThick[s.thick]||0)+1);
+ const legend=Object.keys(byThick).sort((a,b)=>+a-+b).map(t=>`<span class="legend-item">Multiplek ${t} mm: ${byThick[t]} lembar</span>`).join('');
+ return `<div class="layout-summary">
+   <div class="layout-kpi"><b>${ss.length}</b><span>Total lembar</span></div>
+   <div class="layout-kpi"><b>${ex.length}</b><span>Total PCS</span></div>
+   <div class="layout-kpi"><b>${(wasteArea/10000).toFixed(2)} m²</b><span>Perkiraan area sisa</span></div>
+ </div>
+ <div class="layout-legend">${legend}</div>
+ ${ss.map((s,i)=>{
+   const usedSheet=s.items.reduce((a,it)=>a+it.w*it.h,0);
+   const rem=Math.max(0,w*h-usedSheet);
+   const pieces=s.items.map((it,j)=>{
+     const x=it.x/w*100,y=it.y/h*100,ww=it.w/w*100,hh=it.h/h*100;
+     const cls=(it.rot?' rotate':'')+(it.oversize?' oversize':'');
+     const size=`${(it.w/10).toFixed(1)} × ${(it.h/10).toFixed(1)} cm`;
+     const title=it.oversize?'Tidak muat dalam lembar':(it.rot?'Diputar 90°':'Tidak diputar');
+     return `<div class="piece${cls}" title="${esc(title)}" style="left:${x}%;top:${y}%;width:${ww}%;height:${hh}%"><b>${esc(it.name)}</b><br><span>PCS ${it.unit} • ${size}${it.rot?' • ↻':''}</span></div>`;
+   }).join('');
+   return `<div class="sheet">
+     <div class="sheet-actions"><div><h3>Lembar ${i+1} — Multiplek ${s.thick} mm</h3><div class="sheet-sub">${(w/10).toFixed(1)} × ${(h/10).toFixed(1)} cm • ${s.items.length} PCS • Sisa ± ${(rem/10000).toFixed(2)} m²</div></div><span class="legend-item">${((usedSheet/(w*h))*100).toFixed(1)}% terpakai</span></div>
+     <div class="canvas">${pieces}</div>
+   </div>`;
+ }).join('')}`;
+}
+function renderCuttingLayouts(){
+ const el=$('cuttingLayouts');
+ if(el) el.innerHTML=layoutHtml(allSheets());
+}
 function renderResults(){
  let ss=allSheets(), ex=expand(), ar=ex.reduce((z,p)=>z+p.l*p.w,0);
  $('sheets').textContent=ss.length;$('pieces').textContent=ex.length;$('area').textContent=(ar/1e6).toFixed(2)+' m²';
  let matTotal=0,matArea=0;materials.forEach(m=>{matTotal+=(+m.qty||0)*(+m.price||0);matArea+=(+m.l||0)*(+m.w||0)*(+m.qty||0)});$('materialTotal').textContent=rupiah(matTotal);if($('materialAreaTotal'))$('materialAreaTotal').textContent=matArea.toLocaleString('id-ID')+' cm²';
  let waste=+($('wastePct').value||0),hpp=matTotal*(1+waste/100);
-$('hppTotal').textContent=rupiah(hpp);
-$('cost').textContent=rupiah(hpp);
-calcCompleteHPP(hpp);
- $('layouts').innerHTML=ss.length?ss.map((s,i)=>{let {w,h}=dims();return `<div class="sheet"><h3>Lembar ${i+1} — Multiplek ${s.thick} mm • ${(w/10)} × ${(h/10)} cm</h3><div class="canvas">${s.items.map(it=>{let x=it.x/w*100,y=it.y/h*100,ww=it.w/w*100,hh=it.h/h*100;return `<div class="piece" style="left:${x}%;top:${y}%;width:${ww}%;height:${hh}%"><b>${esc(it.name)}</b><br><span>PCS ${it.unit} • ${(it.w/10)}×${(it.h/10)} cm</span></div>`}).join('')}</div><div class="note">${s.items.length} PCS • Multiplek ${s.thick} mm</div></div>`}).join(''):'<div class="empty">Belum ada cutting list.</div>';
+ $('hppTotal').textContent=rupiah(hpp);
+ $('cost').textContent=rupiah(hpp);
+ calcCompleteHPP(hpp);
+ const html=layoutHtml(ss);
+ $('layouts').innerHTML=html;
+ renderCuttingLayouts();
  $('rab').innerHTML=`<div class="totalbox"><b>HPP Material + Waste: ${rupiah(hpp)}</b><br>Total lembar multiplek: ${ss.length}<br>Total PCS: ${ex.length}</div>`;
 }
+
 function normalizeMaterialName(s){
  return String(s||'').trim().replace(/\s+/g,' ').toLowerCase();
 }
