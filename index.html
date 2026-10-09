@@ -58,7 +58,7 @@ button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:poin
 .grand-cost{font-size:18px;font-weight:800;border-top:1px solid #dbe1e8;margin-top:8px;padding-top:10px}
 .sell-price{font-size:21px;font-weight:900;margin-top:8px;padding:12px;border-radius:12px;background:#e0f2fe}
 
-/* V2.8 CutList Optimizer interface */
+/* V2.9 CutList Optimizer interface */
 body{background:#e9edf0}
 header{background:#263238;padding:10px 16px;position:sticky}
 header h1{font-size:19px}header p{font-size:11px}
@@ -98,6 +98,10 @@ main{max-width:none;padding:0 0 24px}
 #cutting .piece:nth-child(3n+1){background:rgba(205,200,218,.72);border-color:#887c9d}
 #cutting .piece b{font-size:clamp(8px,1vw,14px);font-weight:600}
 #cutting .piece span{font-size:clamp(7px,.8vw,11px)}
+#cutting .piece{background:var(--piece-bg,rgba(180,205,212,.72))!important;border-color:var(--piece-border,#607d8b)!important}
+#cutting .waste-piece{position:absolute;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden;padding:2px;border:1px dashed #b45309;background:repeating-linear-gradient(135deg,#fff7ed,#fff7ed 5px,#ffedd5 5px,#ffedd5 10px);color:#9a3412;font-size:clamp(7px,.8vw,11px);line-height:1.15}
+#cutting .waste-piece b{font-size:clamp(7px,.9vw,12px)}
+#cutting .grain-tag{font-size:10px;color:#455a64;margin-top:3px}
 #cutting .layout-summary{grid-template-columns:repeat(3,minmax(0,1fr))}
 #cutting .layout-kpi{border:1px solid #e0e5e8;border-radius:4px}
 #cutting .layout-legend{margin-bottom:12px}
@@ -110,7 +114,7 @@ main{max-width:none;padding:0 0 24px}
 @media print{#cutting .optimizer-shell{display:block}#cutting .optimizer-left{display:none}#cutting .optimizer-right{position:static;max-height:none;overflow:visible}#cutting .canvas{max-width:100%}}
 
 </style>
-<body><header><h1>CutList Furniture Bony</h1><p>V2.8.1 • CutList Optimizer — Cutting List saja</p></header>
+<body><header><h1>CutList Furniture Bony</h1><p>V2.9.0 • CutList Optimizer — Cutting List saja</p></header>
 <main>
 <div class="tabs no-print">
 <button class="tab active" onclick="showTab('project',this)">1. Proyek</button>
@@ -149,7 +153,7 @@ main{max-width:none;padding:0 0 24px}
      <div><label>Qty</label><input id="qty" type="number" inputmode="numeric" min="1" value="1"></div>
      <div><label>Harga lembar (opsional)</label><input id="price" type="number" value="287000"></div>
     </div>
-    <div class="toggle-row"><label style="margin:0"><input id="grain" type="checkbox"> Wajib mengikuti arah serat panjang</label></div>
+    <div class="grid"><div class="full"><label>Arah serat HPL</label><select id="grainDir"><option value="free">Bebas / motif polos</option><option value="vertical">Panjang bidang vertikal</option><option value="horizontal">Panjang bidang horizontal</option></select></div></div>
     <div class="actions"><button class="primary" onclick="addPart()">＋ Tambah Bidang</button><button class="secondary" onclick="clearParts()">Hapus Semua</button></div>
    </div>
   </div>
@@ -235,7 +239,7 @@ main{max-width:none;padding:0 0 24px}
 <div class="card"><h2>Ringkasan RAB</h2><div id="rab"></div><div class="actions no-print"><button class="primary" onclick="printPDF()">🖨 Print / Simpan PDF</button></div></div>
 </section>
 </main><script>
-let parts=JSON.parse(localStorage.getItem('cutlist_parts_v2')||'[]');
+let parts=JSON.parse(localStorage.getItem('cutlist_parts_v2')||'[]').map(p=>({...p,grainDir:p.grainDir||(p.grain?'vertical':'free')}));
 // Normalize legacy/localStorage values so numeric comparisons and layout packing remain reliable.
 parts=Array.isArray(parts)?parts.map(p=>({...p,l:+p.l||0,w:+p.w||0,q:Math.max(1,Math.floor(+p.q||1)),thick:+String(p.thick||18).replace(/[^0-9.]/g,'')||18,price:+p.price||0,grain:!!p.grain})):[];
 let materials=JSON.parse(localStorage.getItem('cutlist_materials_v2')||'null')||[
@@ -254,10 +258,14 @@ function showTab(id,btn){
  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active');
  renderAll();
 }
+function colorForName(name){
+ const palette=[['#dbeafe','#2563eb'],['#dcfce7','#15803d'],['#fef3c7','#b45309'],['#f3e8ff','#7e22ce'],['#ffe4e6','#be123c'],['#cffafe','#0e7490'],['#ffedd5','#c2410c'],['#e0e7ff','#4338ca']];
+ const str=String(name||'Komponen').trim().toLowerCase();let h=0;for(let i=0;i<str.length;i++)h=(h*31+str.charCodeAt(i))>>>0;return palette[h%palette.length];
+}
 function addPart(){
  let l=+$('len').value,w=+$('wid').value,q=Math.max(1,+$('qty').value||1);
  if(!(l>0&&w>0))return alert('Isi panjang dan lebar dalam cm.');
- parts.push({id:Date.now()+Math.random(),name:$('name').value.trim()||'Komponen',l:l*10,w:w*10,q,thick:+$('thick').value,price:+$('price').value||0,grain:$('grain').checked});
+ parts.push({id:Date.now()+Math.random(),name:$('name').value.trim()||'Komponen',l:l*10,w:w*10,q,thick:+$('thick').value,price:+$('price').value||0,grainDir:$('grainDir')?.value||'free',grain:($('grainDir')?.value||'free')!=='free'});
  $('name').value='';$('len').value='';$('wid').value='';$('qty').value=1;saveLocal();renderAll();
 }
 function clearParts(){if(confirm('Hapus semua bidang?')){parts=[];saveLocal();renderAll()}}
@@ -265,7 +273,7 @@ function renderList(){
  const box=$('list');
  if(!parts.length){box.innerHTML='<div class="empty">Belum ada bidang. Isi ukuran lalu klik Tambah Bidang.</div>'; $('panelCount').textContent='0 pcs';return;}
  const total=parts.reduce((n,p)=>n+(+p.q||0),0);$('panelCount').textContent=total+' pcs';
- box.innerHTML=`<table class="panel-table"><thead><tr><th>Length</th><th>Width</th><th>Qty</th><th>Label</th><th>Tebal</th><th></th></tr></thead><tbody>${parts.map((p,i)=>`<tr class="cut-card" data-id="${p.id}"><td><input class="el" type="number" step=".1" value="${(p.l/10)}" aria-label="Panjang"></td><td><input class="ew" type="number" step=".1" value="${(p.w/10)}" aria-label="Lebar"></td><td><input class="eq" type="number" min="1" value="${p.q}" aria-label="Qty"></td><td><input class="en p-name" value="${esc(p.name)}" aria-label="Label"></td><td><select class="et">${[9,12,15,18].map(t=>`<option value="${t}" ${parseThick(p.thick)===t?'selected':''}>${t} mm</option>`).join('')}</select></td><td><button class="row-action del" title="Hapus bidang">✖</button></td></tr>`).join('')}</tbody></table>`;
+ box.innerHTML=`<table class="panel-table"><thead><tr><th>Length</th><th>Width</th><th>Qty</th><th>Label</th><th>Arah serat</th><th>Tebal</th><th></th></tr></thead><tbody>${parts.map((p,i)=>`<tr class="cut-card" data-id="${p.id}"><td><input class="el" type="number" step=".1" value="${(p.l/10)}" aria-label="Panjang"></td><td><input class="ew" type="number" step=".1" value="${(p.w/10)}" aria-label="Lebar"></td><td><input class="eq" type="number" min="1" value="${p.q}" aria-label="Qty"></td><td><input class="en p-name" value="${esc(p.name)}" aria-label="Label"></td><td><select class="eg"><option value="free" ${(p.grainDir||((p.grain)?'vertical':'free'))==='free'?'selected':''}>Bebas</option><option value="vertical" ${(p.grainDir||((p.grain)?'vertical':'free'))==='vertical'?'selected':''}>Vertikal</option><option value="horizontal" ${(p.grainDir||'free')==='horizontal'?'selected':''}>Horizontal</option></select></td><td><select class="et">${[9,12,15,18].map(t=>`<option value="${t}" ${parseThick(p.thick)===t?'selected':''}>${t} mm</option>`).join('')}</select></td><td><button class="row-action del" title="Hapus bidang">✖</button></td></tr>`).join('')}</tbody></table>`;
  box.onchange=e=>{const r=e.target.closest('.cut-card');if(r)commit(r)};
  box.onkeydown=e=>{if(e.key==='Enter'){const r=e.target.closest('.cut-card');if(r){e.preventDefault();commit(r)}}};
  box.onclick=e=>{if(e.target.classList.contains('del')){const r=e.target.closest('.cut-card'),id=+r.dataset.id;if(confirm('Hapus bidang ini?')){parts=parts.filter(p=>p.id!==id);saveLocal();renderAll()}}};
@@ -274,7 +282,7 @@ function commit(r){
  let p=parts.find(x=>x.id===+r.dataset.id);if(!p)return;
  let l=+r.querySelector('.el').value,w=+r.querySelector('.ew').value,q=Math.max(1,Math.floor(+r.querySelector('.eq').value||1));
  if(!(l>0&&w>0))return alert('Panjang dan lebar harus lebih dari 0.');
- p.name=r.querySelector('.en').value.trim()||'Komponen';p.l=l*10;p.w=w*10;p.q=q;p.thick=+r.querySelector('.et').value;saveLocal();renderAll();
+ p.name=r.querySelector('.en').value.trim()||'Komponen';p.l=l*10;p.w=w*10;p.q=q;p.thick=+r.querySelector('.et').value;p.grainDir=r.querySelector('.eg')?.value||'free';p.grain=p.grainDir!=='free';saveLocal();renderAll();
 }
 function parseThick(v){ const n=Number(String(v ?? '').replace(/[^0-9.]/g,'')); return [9,12,15,18].includes(n)?n:18; }
 function expand(){return normalizedParts()}
@@ -302,7 +310,7 @@ function packGroup(items,W,H){
       let best=null;
       for(let row=0;row<s.rows.length;row++){
         const r=s.rows[row];
-        const candidates=p.grain?[false]:[false,true];
+        const dir=p.grainDir||((p.grain)?'vertical':'free'); const candidates=dir==='vertical'?[p.l>=p.w?true:false]:dir==='horizontal'?[p.l>=p.w?false:true]:[false,true];
         for(const rot of candidates){
           const pw=rot?p.w:p.l, ph=rot?p.l:p.w;
           const x=r.x, y=r.y;
@@ -322,7 +330,7 @@ function packGroup(items,W,H){
       // Start a new row on this sheet using the remaining vertical space.
       let nextY=0;
       for(const r of s.rows) nextY=Math.max(nextY,r.y+r.h+kerf);
-      const candidates=p.grain?[false]:[false,true];
+      const dir=p.grainDir||((p.grain)?'vertical':'free'); const candidates=dir==='vertical'?[p.l>=p.w?true:false]:dir==='horizontal'?[p.l>=p.w?false:true]:[false,true];
       let bestRow=null;
       for(const rot of candidates){
         const pw=rot?p.w:p.l, ph=rot?p.l:p.w;
@@ -336,7 +344,7 @@ function packGroup(items,W,H){
       }
     }
     if(!placed){
-      const candidates=p.grain?[false]:[false,true];
+      const dir=p.grainDir||((p.grain)?'vertical':'free'); const candidates=dir==='vertical'?[p.l>=p.w?true:false]:dir==='horizontal'?[p.l>=p.w?false:true]:[false,true];
       let bestSheet=null;
       for(const rot of candidates){
         const pw=rot?p.w:p.l, ph=rot?p.l:p.w;
@@ -454,16 +462,22 @@ function layoutHtml(ss, targetId){
  ${ss.map((s,i)=>{
    const usedSheet=s.items.reduce((a,it)=>a+it.w*it.h,0);
    const rem=Math.max(0,w*h-usedSheet);
-   const pieces=s.items.map((it,j)=>{
+   const wasteRects=[];
+  const rowRects=(s.rows||[]).map(r=>({x:Math.max(0,Math.min(w,r.x- Math.max(0,Number($('kerf')?.value)||3))),y:r.y,ww:Math.max(0,w-(r.x-Math.max(0,Number($('kerf')?.value)||3))),hh:Math.min(r.h,h-r.y)})).filter(r=>r.ww>15&&r.hh>15);
+  rowRects.forEach(r=>wasteRects.push({...r,label:`${(r.ww/10).toFixed(1)} × ${(r.hh/10).toFixed(1)} cm`}));
+  const bottomY=Math.min(h,Math.max(0,...(s.rows||[]).map(r=>r.y+r.h+Math.max(0,Number($('kerf')?.value)||3))));
+  if(bottomY<h-15)wasteRects.push({x:0,y:bottomY,ww:w,hh:h-bottomY,label:`${(w/10).toFixed(1)} × ${((h-bottomY)/10).toFixed(1)} cm`});
+  const wasteHtml=wasteRects.map(r=>`<div class="waste-piece" title="Perkiraan sisa bahan" style="left:${r.x/w*100}%;top:${r.y/h*100}%;width:${r.ww/w*100}%;height:${r.hh/h*100}%"><b>SISA</b><span>${r.label}</span></div>`).join('');
+  const pieces=s.items.map((it,j)=>{
      const x=it.x/w*100,y=it.y/h*100,ww=it.w/w*100,hh=it.h/h*100;
      const cls=(it.rot?' rotate':'')+(it.oversize?' oversize':'');
      const size=`${(it.w/10).toFixed(1)} × ${(it.h/10).toFixed(1)} cm`;
      const title=it.oversize?'Tidak muat dalam lembar':(it.rot?'Diputar 90°':'Tidak diputar');
-     return `<div class="piece${cls}" title="${esc(title)}" style="left:${x}%;top:${y}%;width:${ww}%;height:${hh}%">${$('labelsOn')?.checked!==false?`<b>${esc(it.name)}</b><br><span>PCS ${it.unit} • ${size}${it.rot?' • ↻':''}</span>`:`<b>PCS ${it.unit}</b>`}</div>`;
+     const colors=colorForName(it.name); const grainLabel=it.grainDir==='vertical'?'Serat vertikal':it.grainDir==='horizontal'?'Serat horizontal':''; return `<div class="piece${cls}" title="${esc(title)}" style="left:${x}%;top:${y}%;width:${ww}%;height:${hh}%;--piece-bg:${colors[0]};--piece-border:${colors[1]}">${$('labelsOn')?.checked!==false?`<b>${esc(it.name)}</b><br><span>PCS ${it.unit} • ${size}${it.rot?' • ↻':''}</span>${grainLabel?`<span class="grain-tag">${grainLabel}</span>`:''}`:`<b>PCS ${it.unit}</b>`}</div>`;
    }).join('');
    return `<div class="sheet">
      <div class="sheet-actions"><div><h3>Lembar ${i+1} — Multiplek ${s.thick} mm</h3><div class="sheet-sub">${(w/10).toFixed(1)} × ${(h/10).toFixed(1)} cm • ${s.items.length} PCS • Sisa ± ${(rem/10000).toFixed(2)} m²</div></div><span class="legend-item">${((usedSheet/(w*h))*100).toFixed(1)}% terpakai</span></div>
-     <div class="canvas" style="aspect-ratio:${w}/${h}">${pieces}</div>
+     <div class="canvas" style="aspect-ratio:${w}/${h}">${wasteHtml}${pieces}</div>
    </div>`;
  }).join('')}`;
 }
@@ -615,7 +629,7 @@ function addMaterial(){
 }
 function renderAll(){renderList();try{renderCuttingLayouts()}catch(e){$('cuttingLayouts').innerHTML=`<div class="empty">Layout gagal: ${esc(e.message||e)}</div>`;} }
 function valueOf(id,fallback=''){const el=$(id);return el?el.value:fallback}
-function projectData(){return{version:'2.8.1',project:valueOf('project','CutList Furniture Bony'),customer:valueOf('customer'),sheet:valueOf('sheetSize','1220x2440'),kerf:valueOf('kerf',3),paper:valueOf('paper','A4'),orientation:valueOf('orientation','portrait'),wastePct:valueOf('wastePct',0),laborCost:valueOf('laborCost',0),finishingCost:valueOf('finishingCost',0),transportCost:valueOf('transportCost',0),hardwareCost:valueOf('hardwareCost',0),otherCost:valueOf('otherCost',0),productionOverhead:valueOf('productionOverhead',0),profitPct:valueOf('profitPct',0),discountPct:valueOf('discountPct',0),effectiveArea:valueOf('effectiveArea',28800),hppMarkup:valueOf('hppMarkup',0),stockLength:valueOf('stockLength',244),stockWidth:valueOf('stockWidth',122),stockQty:valueOf('stockQty',100),stockLabel:valueOf('stockLabel','1 sisi'),parts,materials}}
+function projectData(){return{version:'2.9.0',project:valueOf('project','CutList Furniture Bony'),customer:valueOf('customer'),sheet:valueOf('sheetSize','1220x2440'),kerf:valueOf('kerf',3),paper:valueOf('paper','A4'),orientation:valueOf('orientation','portrait'),wastePct:valueOf('wastePct',0),laborCost:valueOf('laborCost',0),finishingCost:valueOf('finishingCost',0),transportCost:valueOf('transportCost',0),hardwareCost:valueOf('hardwareCost',0),otherCost:valueOf('otherCost',0),productionOverhead:valueOf('productionOverhead',0),profitPct:valueOf('profitPct',0),discountPct:valueOf('discountPct',0),effectiveArea:valueOf('effectiveArea',28800),hppMarkup:valueOf('hppMarkup',0),stockLength:valueOf('stockLength',244),stockWidth:valueOf('stockWidth',122),stockQty:valueOf('stockQty',100),stockLabel:valueOf('stockLabel','1 sisi'),parts,materials}}
 function saveLocal(){localStorage.setItem('cutlist_project_v2',JSON.stringify(projectData()));localStorage.setItem('cutlist_parts_v2',JSON.stringify(parts));localStorage.setItem('cutlist_materials_v2',JSON.stringify(materials))}
 function saveProject(){saveLocal();exportJSON();alert('Proyek tersimpan dan backup JSON dibuat.')}
 function exportJSON(){let b=new Blob([JSON.stringify(projectData(),null,2)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=(($('project').value||'proyek-cutlist').replace(/[^\w-]+/g,'_'))+'.json';a.click();URL.revokeObjectURL(u)}
@@ -626,7 +640,7 @@ $('hardwareCost').value=d.hardwareCost||0;$('otherCost').value=d.otherCost||0;$(
 $('profitPct').value=d.profitPct||25;$('discountPct').value=d.discountPct||0;
 $('effectiveArea').value=d.effectiveArea||28800;$('hppMarkup').value=d.hppMarkup||0;saveLocal();renderAll();alert('Proyek berhasil dimuat.')}catch(x){alert('File JSON tidak valid.')}};r.readAsText(f);e.target.value=''})
 function printPDF(){let p=$('paper').value,o=$('orientation').value,s={A4:'210mm 297mm',A3:'297mm 420mm',A5:'148mm 210mm',Letter:'216mm 279mm',Legal:'216mm 356mm'}[p];if(o==='landscape'){let a=s.split(' ');s=a[1]+' '+a[0]}let st=document.getElementById('ps')||document.createElement('style');st.id='ps';st.textContent='@page{size:'+s+';margin:10mm}';document.head.appendChild(st);window.print()}
-['wastePct','laborCost','finishingCost','transportCost','hardwareCost','otherCost','productionOverhead','profitPct','discountPct'].forEach(id=>$(id).addEventListener('input',()=>{saveLocal();renderAll()}));['sheetSize','kerf','project','customer','paper','orientation','effectiveArea','hppMarkup','stockLength','stockWidth','stockQty','stockLabel','labelsOn','grainOption','edgeOption','oneSheet'].forEach(id=>{const el=$(id);if(el)el.addEventListener('input',()=>{if(id==='grainOption' && el.checked)parts.forEach(p=>p.grain=true);saveLocal();renderAll()})});
+['wastePct','laborCost','finishingCost','transportCost','hardwareCost','otherCost','productionOverhead','profitPct','discountPct'].forEach(id=>$(id).addEventListener('input',()=>{saveLocal();renderAll()}));['sheetSize','kerf','project','customer','paper','orientation','effectiveArea','hppMarkup','stockLength','stockWidth','stockQty','stockLabel','labelsOn','grainOption','edgeOption','oneSheet'].forEach(id=>{const el=$(id);if(el)el.addEventListener('input',()=>{if(id==='grainOption' && el.checked)parts.forEach(p=>{p.grain=true;p.grainDir=p.grainDir||'vertical'});saveLocal();renderAll()})});
 window.addEventListener('beforeprint',()=>{let p=$('paper').value,o=$('orientation').value,s={A4:'210mm 297mm',A3:'297mm 420mm',A5:'148mm 210mm',Letter:'216mm 279mm',Legal:'216mm 356mm'}[p]||'210mm 297mm';if(o==='landscape'){let a=s.split(' ');s=a[1]+' '+a[0]}let st=document.getElementById('ps')||document.createElement('style');st.id='ps';st.textContent='@page{size:'+s+';margin:10mm}';document.head.appendChild(st);});
 renderAll();
 </script>
