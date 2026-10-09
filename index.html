@@ -101,6 +101,12 @@ main{max-width:none;padding:0 0 24px}
 #cutting .piece{background:var(--piece-bg,rgba(180,205,212,.72))!important;border-color:var(--piece-border,#607d8b)!important}
 #cutting .waste-piece{position:absolute;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden;padding:2px;border:1px dashed #b45309;background:repeating-linear-gradient(135deg,#fff7ed,#fff7ed 5px,#ffedd5 5px,#ffedd5 10px);color:#9a3412;font-size:clamp(7px,.8vw,11px);line-height:1.15}
 #cutting .waste-piece b{font-size:clamp(7px,.9vw,12px)}
+/* Ukuran dimensi di sisi atas dan samping setiap bidang, termasuk sisa */
+#cutting .dim-x{position:absolute;z-index:5;top:1px;left:50%;transform:translateX(-50%);padding:0 3px;border-radius:2px;background:rgba(255,255,255,.88);color:#475569;font-size:clamp(7px,.85vw,11px);font-weight:700;white-space:nowrap;pointer-events:none}
+#cutting .dim-y{position:absolute;z-index:5;left:1px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;transform-origin:center;rotate:180deg;padding:2px 1px;border-radius:2px;background:rgba(255,255,255,.88);color:#475569;font-size:clamp(7px,.85vw,11px);font-weight:700;white-space:nowrap;pointer-events:none}
+#cutting .waste-piece .dim-x,#cutting .waste-piece .dim-y{color:#9a3412;background:rgba(255,255,255,.92)}
+#cutting .piece .dim-x,#cutting .piece .dim-y{font-size:clamp(7px,.8vw,10px)}
+@media print{#cutting .dim-x,#cutting .dim-y{background:#fff}}
 #cutting .grain-tag{font-size:10px;color:#455a64;margin-top:3px}
 #cutting .layout-summary{grid-template-columns:repeat(3,minmax(0,1fr))}
 #cutting .layout-kpi{border:1px solid #e0e5e8;border-radius:4px}
@@ -114,7 +120,7 @@ main{max-width:none;padding:0 0 24px}
 @media print{#cutting .optimizer-shell{display:block}#cutting .optimizer-left{display:none}#cutting .optimizer-right{position:static;max-height:none;overflow:visible}#cutting .canvas{max-width:100%}}
 
 </style>
-<body><header><h1>CutList Furniture Bony</h1><p>V2.9.1 • CutList Optimizer — Multiplek + HPL</p></header>
+<body><header><h1>CutList Furniture Bony</h1><p>V2.9.2 • CutList Optimizer — Ukuran Samping Layout</p></header>
 <main>
 <div class="tabs no-print">
 <button class="tab active" onclick="showTab('project',this)">1. Proyek</button>
@@ -134,7 +140,7 @@ main{max-width:none;padding:0 0 24px}
 </div></div>
 <div class="card"><h2>Manajemen Proyek</h2><div class="actions">
 <button class="primary" onclick="saveProject()">💾 Simpan</button><button class="secondary" onclick="loadProject()">↩ Muat</button>
-<button class="secondary" onclick="exportJSON()">⬇ Backup JSON</button><button class="secondary" onclick="importJSON()">⬆ Import JSON</button>
+<button class="secondary" onclick="saveFileAs()">💾 Simpan File ke PC…</button><button class="secondary" onclick="exportJSON()">⬇ Backup JSON</button><button class="secondary" onclick="importJSON()">⬆ Import JSON</button>
 <input id="fileImport" type="file" accept=".json" hidden>
 </div><p class="note">Proyek disimpan di perangkat dan dapat dibackup sebagai file JSON.</p></div>
 </section>
@@ -464,13 +470,13 @@ function layoutHtml(ss, targetId){
   rowRects.forEach(r=>wasteRects.push({...r,label:`${(r.ww/10).toFixed(1)} × ${(r.hh/10).toFixed(1)} cm`}));
   const bottomY=Math.min(h,Math.max(0,...(s.rows||[]).map(r=>r.y+r.h+Math.max(0,Number($('kerf')?.value)||3))));
   if(bottomY<h-15)wasteRects.push({x:0,y:bottomY,ww:w,hh:h-bottomY,label:`${(w/10).toFixed(1)} × ${((h-bottomY)/10).toFixed(1)} cm`});
-  const wasteHtml=wasteRects.map(r=>`<div class="waste-piece" title="Perkiraan sisa bahan" style="left:${r.x/w*100}%;top:${r.y/h*100}%;width:${r.ww/w*100}%;height:${r.hh/h*100}%"><b>SISA</b><span>${r.label}</span></div>`).join('');
+  const wasteHtml=wasteRects.map(r=>`<div class="waste-piece" title="Perkiraan sisa bahan ${r.label}" style="left:${r.x/w*100}%;top:${r.y/h*100}%;width:${r.ww/w*100}%;height:${r.hh/h*100}%"><span class="dim-x">${(r.ww/10).toFixed(1)} cm</span><span class="dim-y">${(r.hh/10).toFixed(1)} cm</span><b>SISA</b><span>${r.label}</span></div>`).join('');
   const pieces=s.items.map((it,j)=>{
      const x=it.x/w*100,y=it.y/h*100,ww=it.w/w*100,hh=it.h/h*100;
      const cls=(it.rot?' rotate':'')+(it.oversize?' oversize':'');
      const size=`${(it.w/10).toFixed(1)} × ${(it.h/10).toFixed(1)} cm`;
      const title=it.oversize?'Tidak muat dalam lembar':(it.rot?'Diputar 90°':'Tidak diputar');
-     const colors=colorForName(it.name); const grainLabel=it.grainDir==='vertical'?'Serat vertikal':it.grainDir==='horizontal'?'Serat horizontal':''; return `<div class="piece${cls}" title="${esc(title)}" style="left:${x}%;top:${y}%;width:${ww}%;height:${hh}%;--piece-bg:${colors[0]};--piece-border:${colors[1]}">${$('labelsOn')?.checked!==false?`<b>${esc(it.name)}</b><br><span>PCS ${it.unit} • ${size}${it.rot?' • ↻':''}</span>${grainLabel?`<span class="grain-tag">${grainLabel}</span>`:''}`:`<b>PCS ${it.unit}</b>`}</div>`;
+     const colors=colorForName(it.name); const grainLabel=it.grainDir==='vertical'?'Serat vertikal':it.grainDir==='horizontal'?'Serat horizontal':''; return `<div class="piece${cls}" title="${esc(title)} • Ukuran ${size}" style="left:${x}%;top:${y}%;width:${ww}%;height:${hh}%;--piece-bg:${colors[0]};--piece-border:${colors[1]}"><span class="dim-x">${(it.w/10).toFixed(1)} cm</span><span class="dim-y">${(it.h/10).toFixed(1)} cm</span>${$('labelsOn')?.checked!==false?`<b>${esc(it.name)}</b><br><span>PCS ${it.unit} • ${size}${it.rot?' • ↻':''}</span>${grainLabel?`<span class="grain-tag">${grainLabel}</span>`:''}`:`<b>PCS ${it.unit}</b>`}</div>`;
    }).join('');
    return `<div class="sheet">
      <div class="sheet-actions"><div><h3>Lembar ${i+1} — ${s.materialType==='HPL'?'HPL':`Multiplek ${s.thick} mm`}</h3><div class="sheet-sub">${(w/10).toFixed(1)} × ${(h/10).toFixed(1)} cm • ${s.items.length} PCS • Sisa ± ${(rem/10000).toFixed(2)} m²</div></div><span class="legend-item">${((usedSheet/(w*h))*100).toFixed(1)}% terpakai</span></div>
@@ -626,10 +632,11 @@ function addMaterial(){
 }
 function renderAll(){renderList();try{renderCuttingLayouts()}catch(e){$('cuttingLayouts').innerHTML=`<div class="empty">Layout gagal: ${esc(e.message||e)}</div>`;} }
 function valueOf(id,fallback=''){const el=$(id);return el?el.value:fallback}
-function projectData(){return{version:'2.9.1',project:valueOf('project','CutList Furniture Bony'),customer:valueOf('customer'),sheet:valueOf('sheetSize','1220x2440'),kerf:valueOf('kerf',3),paper:valueOf('paper','A4'),orientation:valueOf('orientation','portrait'),wastePct:valueOf('wastePct',0),laborCost:valueOf('laborCost',0),finishingCost:valueOf('finishingCost',0),transportCost:valueOf('transportCost',0),hardwareCost:valueOf('hardwareCost',0),otherCost:valueOf('otherCost',0),productionOverhead:valueOf('productionOverhead',0),profitPct:valueOf('profitPct',0),discountPct:valueOf('discountPct',0),effectiveArea:valueOf('effectiveArea',28800),hppMarkup:valueOf('hppMarkup',0),stockLength:valueOf('stockLength',244),stockWidth:valueOf('stockWidth',122),stockQty:valueOf('stockQty',100),stockLabel:valueOf('stockLabel','1 sisi'),parts,materials}}
+function projectData(){return{version:'2.9.3',project:valueOf('project','CutList Furniture Bony'),customer:valueOf('customer'),sheet:valueOf('sheetSize','1220x2440'),kerf:valueOf('kerf',3),paper:valueOf('paper','A4'),orientation:valueOf('orientation','portrait'),wastePct:valueOf('wastePct',0),laborCost:valueOf('laborCost',0),finishingCost:valueOf('finishingCost',0),transportCost:valueOf('transportCost',0),hardwareCost:valueOf('hardwareCost',0),otherCost:valueOf('otherCost',0),productionOverhead:valueOf('productionOverhead',0),profitPct:valueOf('profitPct',0),discountPct:valueOf('discountPct',0),effectiveArea:valueOf('effectiveArea',28800),hppMarkup:valueOf('hppMarkup',0),stockLength:valueOf('stockLength',244),stockWidth:valueOf('stockWidth',122),stockQty:valueOf('stockQty',100),stockLabel:valueOf('stockLabel','1 sisi'),parts,materials}}
 function saveLocal(){localStorage.setItem('cutlist_project_v2',JSON.stringify(projectData()));localStorage.setItem('cutlist_parts_v2',JSON.stringify(parts));localStorage.setItem('cutlist_materials_v2',JSON.stringify(materials))}
 function saveProject(){saveLocal();exportJSON();alert('Proyek tersimpan dan backup JSON dibuat.')}
 function exportJSON(){let b=new Blob([JSON.stringify(projectData(),null,2)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=(($('project').value||'proyek-cutlist').replace(/[^\w-]+/g,'_'))+'.json';a.click();URL.revokeObjectURL(u)}
+async function saveFileAs(){saveLocal();let suggested=(($('project')?.value||'Proyek-CutList-Furniture-Bony').trim().replace(/[\\/:*?"<>|]+/g,'_').replace(/\.json$/i,''))||'Proyek-CutList-Furniture-Bony';let entered=prompt('Nama file yang akan disimpan (tanpa .json):',suggested);if(entered===null)return;let filename=entered.trim().replace(/[\\/:*?"<>|]+/g,'_').replace(/\.json$/i,'');if(!filename){alert('Nama file tidak boleh kosong.');return}let blob=new Blob([JSON.stringify(projectData(),null,2)],{type:'application/json'});if(window.showSaveFilePicker){try{const handle=await window.showSaveFilePicker({suggestedName:filename+'.json',types:[{description:'File proyek CutList (JSON)',accept:{'application/json':['.json']}}]});const writable=await handle.createWritable();await writable.write(blob);await writable.close();alert('File berhasil disimpan: '+filename+'.json');return}catch(err){if(err&&err.name==='AbortError')return;console.error(err);alert('Pemilih lokasi tidak dapat digunakan. File akan diunduh melalui browser.')}}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);alert('File disiapkan untuk diunduh. Jika lokasi tidak ditanyakan, aktifkan pilihan “Tanyakan lokasi penyimpanan setiap file” pada pengaturan unduhan browser.')}
 function importJSON(){$('fileImport').click()}
 $('fileImport').addEventListener('change',e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result);parts=d.parts||[];materials=(d.materials||materials).map(m=>({...m,source:m.source||'manual'}));$('project').value=d.project||'';$('customer').value=d.customer||'';$('sheetSize').value=d.sheet||'1220x2440';$('kerf').value=d.kerf||3;$('paper').value=d.paper||'A4';$('orientation').value=d.orientation||'portrait';$('wastePct').value=d.wastePct||5;
 $('laborCost').value=d.laborCost||0;$('finishingCost').value=d.finishingCost||0;$('transportCost').value=d.transportCost||0;
