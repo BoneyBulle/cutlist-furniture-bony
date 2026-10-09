@@ -110,7 +110,7 @@ main{max-width:none;padding:0 0 24px}
 @media print{#cutting .optimizer-shell{display:block}#cutting .optimizer-left{display:none}#cutting .optimizer-right{position:static;max-height:none;overflow:visible}#cutting .canvas{max-width:100%}}
 
 </style>
-<body><header><h1>CutList Furniture Bony</h1><p>V2.8 • CutList Optimizer — Cutting List saja</p></header>
+<body><header><h1>CutList Furniture Bony</h1><p>V2.8.1 • CutList Optimizer — Cutting List saja</p></header>
 <main>
 <div class="tabs no-print">
 <button class="tab active" onclick="showTab('project',this)">1. Proyek</button>
@@ -614,7 +614,8 @@ function addMaterial(){
  saveLocal();renderAll();
 }
 function renderAll(){renderList();try{renderCuttingLayouts()}catch(e){$('cuttingLayouts').innerHTML=`<div class="empty">Layout gagal: ${esc(e.message||e)}</div>`;} }
-function projectData(){return{version:'2.0',project:$('project').value,customer:$('customer').value,sheet:$('sheetSize').value,kerf:$('kerf').value,paper:$('paper').value,orientation:$('orientation').value,wastePct:$('wastePct').value,laborCost:$('laborCost').value,finishingCost:$('finishingCost').value,transportCost:$('transportCost').value,hardwareCost:$('hardwareCost').value,otherCost:$('otherCost').value,productionOverhead:$('productionOverhead').value,profitPct:$('profitPct').value,discountPct:$('discountPct').value,effectiveArea:$('effectiveArea').value,hppMarkup:$('hppMarkup').value,parts,materials}}
+function valueOf(id,fallback=''){const el=$(id);return el?el.value:fallback}
+function projectData(){return{version:'2.8.1',project:valueOf('project','CutList Furniture Bony'),customer:valueOf('customer'),sheet:valueOf('sheetSize','1220x2440'),kerf:valueOf('kerf',3),paper:valueOf('paper','A4'),orientation:valueOf('orientation','portrait'),wastePct:valueOf('wastePct',0),laborCost:valueOf('laborCost',0),finishingCost:valueOf('finishingCost',0),transportCost:valueOf('transportCost',0),hardwareCost:valueOf('hardwareCost',0),otherCost:valueOf('otherCost',0),productionOverhead:valueOf('productionOverhead',0),profitPct:valueOf('profitPct',0),discountPct:valueOf('discountPct',0),effectiveArea:valueOf('effectiveArea',28800),hppMarkup:valueOf('hppMarkup',0),stockLength:valueOf('stockLength',244),stockWidth:valueOf('stockWidth',122),stockQty:valueOf('stockQty',100),stockLabel:valueOf('stockLabel','1 sisi'),parts,materials}}
 function saveLocal(){localStorage.setItem('cutlist_project_v2',JSON.stringify(projectData()));localStorage.setItem('cutlist_parts_v2',JSON.stringify(parts));localStorage.setItem('cutlist_materials_v2',JSON.stringify(materials))}
 function saveProject(){saveLocal();exportJSON();alert('Proyek tersimpan dan backup JSON dibuat.')}
 function exportJSON(){let b=new Blob([JSON.stringify(projectData(),null,2)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=(($('project').value||'proyek-cutlist').replace(/[^\w-]+/g,'_'))+'.json';a.click();URL.revokeObjectURL(u)}
