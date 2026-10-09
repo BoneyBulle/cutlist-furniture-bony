@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="CutList Furniture">
-<title>CutList Furniture — Multiplek</title>
+<title>CutList Optimizer — Cutting List</title>
 <style>
 :root{--bg:#f3f4f6;--card:#fff;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--blue:#2563eb;--danger:#b91c1c}
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
@@ -57,8 +57,60 @@ button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:poin
 
 .grand-cost{font-size:18px;font-weight:800;border-top:1px solid #dbe1e8;margin-top:8px;padding-top:10px}
 .sell-price{font-size:21px;font-weight:900;margin-top:8px;padding:12px;border-radius:12px;background:#e0f2fe}
+
+/* V2.8 CutList Optimizer interface */
+body{background:#e9edf0}
+header{background:#263238;padding:10px 16px;position:sticky}
+header h1{font-size:19px}header p{font-size:11px}
+main{max-width:none;padding:0 0 24px}
+.tabs{display:none!important}
+#project,#material,#result{display:none!important}
+#cutting{display:block!important;margin:0}
+#cutting .optimizer-shell{display:grid;grid-template-columns:minmax(440px,42%) minmax(0,58%);min-height:calc(100vh - 60px);gap:0;background:#fff}
+#cutting .optimizer-left{border-right:1px solid #bfc7cc;min-width:0;background:#f7f8f9}
+#cutting .optimizer-right{min-width:0;padding:16px;background:#fff;position:sticky;top:60px;align-self:start;max-height:calc(100vh - 60px);overflow:auto}
+#cutting .opt-panel{border-bottom:1px solid #c8ced2;background:#f8f9fa}
+#cutting .opt-title{padding:10px 14px;background:#d8dde0;font-weight:800;color:#37474f;display:flex;justify-content:space-between;align-items:center}
+#cutting .opt-content{padding:12px}
+#cutting .grid{gap:8px}
+#cutting label{font-size:11px;margin:4px 0}
+#cutting input,#cutting select{min-height:35px;padding:7px 8px;border-radius:5px;font-size:14px}
+#cutting button{border-radius:5px;padding:9px 11px;font-size:13px}
+#cutting .actions{gap:7px}
+#cutting .primary{background:#37474f;color:white}
+#cutting .secondary{background:#e0e4e7}
+#cutting .panel-table-wrap{overflow:auto;max-width:100%}
+#cutting .panel-table{border-collapse:collapse;width:100%;min-width:590px;background:#fff}
+#cutting .panel-table th,#cutting .panel-table td{border:1px solid #d6dadd;padding:5px 6px;text-align:left;font-size:12px;white-space:nowrap}
+#cutting .panel-table th{background:#eceff1;font-weight:800}
+#cutting .panel-table input{min-height:29px;padding:4px 5px;font-size:12px;border-radius:3px;min-width:55px}
+#cutting .panel-table .p-name{min-width:130px;width:100%}
+#cutting .row-action{border:0;background:transparent;padding:3px 6px;font-size:16px}
+#cutting .row-action.del{color:#dc2626}
+#cutting .stock-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#cutting .toggle-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:6px 0;font-size:12px}
+#cutting .toggle-row input{width:auto;min-height:0}
+#cutting .opt-sheet-list{display:flex;flex-direction:column;gap:7px}
+#cutting .sheet{margin:12px 0;padding:10px;border-radius:4px;border-color:#cbd5d8}
+#cutting .canvas{border-radius:0;background-color:#fafafa;background-image:none;border:2px solid #59656a;aspect-ratio:122/244;max-width:100%;margin:auto}
+#cutting .piece{border-width:1px;background:rgba(180,205,212,.72);border-color:#607d8b;color:#263238;padding:2px}
+#cutting .piece:nth-child(3n){background:rgba(220,205,196,.72);border-color:#9a8074}
+#cutting .piece:nth-child(3n+1){background:rgba(205,200,218,.72);border-color:#887c9d}
+#cutting .piece b{font-size:clamp(8px,1vw,14px);font-weight:600}
+#cutting .piece span{font-size:clamp(7px,.8vw,11px)}
+#cutting .layout-summary{grid-template-columns:repeat(3,minmax(0,1fr))}
+#cutting .layout-kpi{border:1px solid #e0e5e8;border-radius:4px}
+#cutting .layout-legend{margin-bottom:12px}
+#cutting .empty{padding:28px 12px;border:1px dashed #cbd5e1;background:#fafafa}
+#cutting .right-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #d8dde0;padding-bottom:10px;margin-bottom:12px}
+#cutting .right-heading h2{margin:0;font-size:18px}
+#cutting .right-heading .note{font-size:11px}
+@media(max-width:900px){#cutting .optimizer-shell{grid-template-columns:1fr}#cutting .optimizer-right{position:static;max-height:none;border-top:2px solid #cbd5e1}#cutting .optimizer-left{border-right:0}#cutting .canvas{max-width:460px}}
+@media(max-width:520px){#cutting .stock-grid{grid-template-columns:1fr 1fr}#cutting .layout-summary{grid-template-columns:1fr 1fr}#cutting .layout-summary .layout-kpi:last-child{grid-column:1/-1}#cutting .optimizer-right{padding:10px}}
+@media print{#cutting .optimizer-shell{display:block}#cutting .optimizer-left{display:none}#cutting .optimizer-right{position:static;max-height:none;overflow:visible}#cutting .canvas{max-width:100%}}
+
 </style>
-<body><header><h1>CutList Furniture Bony</h1><p>V2.7 • Cutting List + Layout Pembagian Bidang + HPP</p></header>
+<body><header><h1>CutList Furniture Bony</h1><p>V2.8 • CutList Optimizer — Cutting List saja</p></header>
 <main>
 <div class="tabs no-print">
 <button class="tab active" onclick="showTab('project',this)">1. Proyek</button>
@@ -83,18 +135,59 @@ button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:poin
 </div><p class="note">Proyek disimpan di perangkat dan dapat dibackup sebagai file JSON.</p></div>
 </section>
 
-<section id="cutting" class="tabpage" style="display:none">
-<div class="card"><h2>Tambah Komponen Cutting List</h2><div class="grid">
-<div><label>Nama komponen</label><input id="name" placeholder="Samping kabinet"></div>
-<div><label>Multiplek / Tebal</label><select id="thick"><option value="9">Multiplek 9 mm</option><option value="12">Multiplek 12 mm</option><option value="15">Multiplek 15 mm</option><option value="18" selected>Multiplek 18 mm</option></select></div>
-<div><label>Panjang (cm)</label><input id="len" type="number" inputmode="decimal" step=".1"></div>
-<div><label>Lebar (cm)</label><input id="wid" type="number" inputmode="decimal" step=".1"></div>
-<div><label>Qty / PCS</label><input id="qty" type="number" inputmode="numeric" min="1" value="1"></div>
-<div><label>Harga multiplek/lembar (Rp)</label><input id="price" type="number" value="287000"></div>
-</div><p><label><input id="grain" type="checkbox" style="width:auto;min-height:0"> Wajib mengikuti arah serat panjang</label></p>
-<div class="actions"><button class="primary" onclick="addPart()">+ Tambah Komponen</button><button class="secondary" onclick="clearParts()">Hapus Semua</button></div></div>
-<div class="card"><h2>Daftar Cutting</h2><p class="note">Edit ukuran dan Qty langsung pada kartu. Setiap PCS dihitung sebagai potongan nyata.</p><div id="list"></div></div>
-<div class="card"><h2>Layout Pembagian Bidang</h2><p class="note">Pembagian bidang tampil otomatis dari Cutting List. Setiap lembar dipisahkan berdasarkan ketebalan multiplek. Ukuran bidang, PCS, arah putar, dan sisa area ditampilkan.</p><div id="cuttingLayouts"></div></div>
+<section id="cutting" class="tabpage">
+<div class="optimizer-shell">
+ <div class="optimizer-left">
+  <div class="opt-panel">
+   <div class="opt-title"><span>▦ Panels / Tambah Bidang</span><span>Cutting List</span></div>
+   <div class="opt-content">
+    <div class="grid">
+     <div><label>Nama / Label</label><input id="name" placeholder="contoh: samping"></div>
+     <div><label>Multiplek / Tebal</label><select id="thick"><option value="9">Multiplek 9 mm</option><option value="12">Multiplek 12 mm</option><option value="15">Multiplek 15 mm</option><option value="18" selected>Multiplek 18 mm</option></select></div>
+     <div><label>Length / Panjang (cm)</label><input id="len" type="number" inputmode="decimal" step=".1" placeholder="200"></div>
+     <div><label>Width / Lebar (cm)</label><input id="wid" type="number" inputmode="decimal" step=".1" placeholder="60"></div>
+     <div><label>Qty</label><input id="qty" type="number" inputmode="numeric" min="1" value="1"></div>
+     <div><label>Harga lembar (opsional)</label><input id="price" type="number" value="287000"></div>
+    </div>
+    <div class="toggle-row"><label style="margin:0"><input id="grain" type="checkbox"> Wajib mengikuti arah serat panjang</label></div>
+    <div class="actions"><button class="primary" onclick="addPart()">＋ Tambah Bidang</button><button class="secondary" onclick="clearParts()">Hapus Semua</button></div>
+   </div>
+  </div>
+  <div class="opt-panel">
+   <div class="opt-title"><span>▤ Panels List / Daftar Bidang</span><span id="panelCount">0 pcs</span></div>
+   <div class="opt-content"><div id="list" class="panel-table-wrap"></div></div>
+  </div>
+  <div class="opt-panel">
+   <div class="opt-title"><span>◈ Stock Sheets / Lembar Bahan</span></div>
+   <div class="opt-content">
+    <div class="stock-grid">
+     <div><label>Panjang lembar (cm)</label><input id="stockLength" type="number" value="244" min="1"></div>
+     <div><label>Lebar lembar (cm)</label><input id="stockWidth" type="number" value="122" min="1"></div>
+     <div><label>Stok lembar</label><input id="stockQty" type="number" value="100" min="1"></div>
+     <div><label>Label bahan</label><input id="stockLabel" value="1 sisi"></div>
+    </div>
+    <div class="stock-grid" style="margin-top:8px">
+     <div><label>Kerf / mata gergaji (mm)</label><input id="kerf" type="number" value="3" min="0" step=".5"></div>
+     <div><label>Kertas cetak</label><select id="paper"><option>A4</option><option>A3</option><option>A5</option><option>Letter</option><option>Legal</option></select></div>
+    </div>
+   </div>
+  </div>
+  <div class="opt-panel">
+   <div class="opt-title"><span>⚙ Options / Pengaturan</span></div>
+   <div class="opt-content">
+    <div class="toggle-row"><span>Labels on panels / Nama pada bidang</span><input id="labelsOn" type="checkbox" checked></div>
+    <div class="toggle-row"><span>Consider grain direction / Ikuti arah serat</span><input id="grainOption" type="checkbox"></div>
+    <div class="toggle-row"><span>Edge banding / Catatan edging</span><input id="edgeOption" type="checkbox"></div>
+    <div class="toggle-row"><span>Use only one sheet / Maks. satu lembar</span><input id="oneSheet" type="checkbox"></div>
+    <div class="actions" style="margin-top:8px"><button class="secondary" onclick="saveProject()">Simpan / Backup JSON</button><button class="secondary" onclick="importJSON()">Import JSON</button><button class="primary" onclick="printPDF()">Print Layout</button><input id="fileImport" type="file" accept=".json" hidden></div>
+   </div>
+  </div>
+ </div>
+ <div class="optimizer-right">
+  <div class="right-heading"><div><h2>Cutting Layout / Pembagian Bidang</h2><div class="note">Visualisasi susunan potongan pada setiap lembar multiplek.</div></div><button class="primary no-print" onclick="printPDF()">⇧ Print</button></div>
+  <div id="cuttingLayouts"><div class="empty">Tambahkan bidang untuk melihat layout.</div></div>
+ </div>
+</div>
 </section>
 
 <section id="material" class="tabpage" style="display:none">
@@ -165,38 +258,29 @@ function addPart(){
  let l=+$('len').value,w=+$('wid').value,q=Math.max(1,+$('qty').value||1);
  if(!(l>0&&w>0))return alert('Isi panjang dan lebar dalam cm.');
  parts.push({id:Date.now()+Math.random(),name:$('name').value.trim()||'Komponen',l:l*10,w:w*10,q,thick:+$('thick').value,price:+$('price').value||0,grain:$('grain').checked});
- $('name').value='';$('len').value='';$('wid').value='';$('qty').value=1;syncCuttingToMaterial();
+ $('name').value='';$('len').value='';$('wid').value='';$('qty').value=1;saveLocal();renderAll();
 }
-function clearParts(){if(confirm('Hapus semua cutting list?')){parts=[];materials=materials.filter(m=>m.source!=='cutting' && !/^Multiplek\s+\d+\s*mm$/i.test(String(m.name||'')));saveLocal();renderAll()}}
+function clearParts(){if(confirm('Hapus semua bidang?')){parts=[];saveLocal();renderAll()}}
 function renderList(){
- if(!parts.length){$('list').innerHTML='<div class="empty">Belum ada komponen.</div>';return}
- $('list').innerHTML=parts.map((p,i)=>`<div class="cut-card" data-id="${p.id}">
- <div class="cut-head"><b>Komponen ${i+1}</b><button class="danger del">Hapus</button></div>
- <label>Nama</label><input class="en" value="${esc(p.name)}">
- <div class="cut-grid"><div><label>Panjang (cm)</label><input class="el" type="number" step=".1" inputmode="decimal" value="${p.l/10}"></div>
- <div><label>Lebar (cm)</label><input class="ew" type="number" step=".1" inputmode="decimal" value="${p.w/10}"></div>
- <div><label>Qty / PCS</label><input class="eq" type="number" min="1" inputmode="numeric" value="${p.q}"></div>
- <div><label>Tebal</label><select class="et">${[9,12,15,18].map(t=>`<option value="${t}" ${p.thick==t?'selected':''}>${t} mm</option>`).join('')}</select></div></div>
- <div class="cut-meta">${p.grain?'✓ Arah serat wajib':'Arah serat bebas'} • Harga/lembar ${rupiah(p.price)}</div></div>`).join('');
  const box=$('list');
- box.onchange=e=>{let r=e.target.closest('.cut-card');if(r)commit(r)};
- box.onkeydown=e=>{if(e.key==='Enter'){let r=e.target.closest('.cut-card');if(r){e.preventDefault();commit(r)}}};
- box.onclick=e=>{if(e.target.classList.contains('del')){let r=e.target.closest('.cut-card'),id=+r.dataset.id;if(confirm('Hapus komponen ini?')){parts=parts.filter(p=>p.id!==id);syncCuttingToMaterial()}}};
+ if(!parts.length){box.innerHTML='<div class="empty">Belum ada bidang. Isi ukuran lalu klik Tambah Bidang.</div>'; $('panelCount').textContent='0 pcs';return;}
+ const total=parts.reduce((n,p)=>n+(+p.q||0),0);$('panelCount').textContent=total+' pcs';
+ box.innerHTML=`<table class="panel-table"><thead><tr><th>Length</th><th>Width</th><th>Qty</th><th>Label</th><th>Tebal</th><th></th></tr></thead><tbody>${parts.map((p,i)=>`<tr class="cut-card" data-id="${p.id}"><td><input class="el" type="number" step=".1" value="${(p.l/10)}" aria-label="Panjang"></td><td><input class="ew" type="number" step=".1" value="${(p.w/10)}" aria-label="Lebar"></td><td><input class="eq" type="number" min="1" value="${p.q}" aria-label="Qty"></td><td><input class="en p-name" value="${esc(p.name)}" aria-label="Label"></td><td><select class="et">${[9,12,15,18].map(t=>`<option value="${t}" ${parseThick(p.thick)===t?'selected':''}>${t} mm</option>`).join('')}</select></td><td><button class="row-action del" title="Hapus bidang">✖</button></td></tr>`).join('')}</tbody></table>`;
+ box.onchange=e=>{const r=e.target.closest('.cut-card');if(r)commit(r)};
+ box.onkeydown=e=>{if(e.key==='Enter'){const r=e.target.closest('.cut-card');if(r){e.preventDefault();commit(r)}}};
+ box.onclick=e=>{if(e.target.classList.contains('del')){const r=e.target.closest('.cut-card'),id=+r.dataset.id;if(confirm('Hapus bidang ini?')){parts=parts.filter(p=>p.id!==id);saveLocal();renderAll()}}};
 }
 function commit(r){
  let p=parts.find(x=>x.id===+r.dataset.id);if(!p)return;
  let l=+r.querySelector('.el').value,w=+r.querySelector('.ew').value,q=Math.max(1,Math.floor(+r.querySelector('.eq').value||1));
  if(!(l>0&&w>0))return alert('Panjang dan lebar harus lebih dari 0.');
- p.name=r.querySelector('.en').value.trim()||'Komponen';p.l=l*10;p.w=w*10;p.q=q;p.thick=+r.querySelector('.et').value;syncCuttingToMaterial();
+ p.name=r.querySelector('.en').value.trim()||'Komponen';p.l=l*10;p.w=w*10;p.q=q;p.thick=+r.querySelector('.et').value;saveLocal();renderAll();
 }
 function parseThick(v){ const n=Number(String(v ?? '').replace(/[^0-9.]/g,'')); return [9,12,15,18].includes(n)?n:18; }
 function expand(){return normalizedParts()}
 function sheetDims(){
-  const raw=String($('sheetSize')?.value||'1220x2440');
-  const a=raw.split('x').map(Number);
-  const w=Number.isFinite(a[0])&&a[0]>0?a[0]:1220;
-  const h=Number.isFinite(a[1])&&a[1]>0?a[1]:2440;
-  return {w,h};
+  const sw=Number($('stockWidth')?.value)||122; const sh=Number($('stockLength')?.value)||244;
+  return {w:sw*10,h:sh*10};
 }
 function dims(){return sheetDims();}
 function normalizedParts(){
@@ -375,7 +459,7 @@ function layoutHtml(ss, targetId){
      const cls=(it.rot?' rotate':'')+(it.oversize?' oversize':'');
      const size=`${(it.w/10).toFixed(1)} × ${(it.h/10).toFixed(1)} cm`;
      const title=it.oversize?'Tidak muat dalam lembar':(it.rot?'Diputar 90°':'Tidak diputar');
-     return `<div class="piece${cls}" title="${esc(title)}" style="left:${x}%;top:${y}%;width:${ww}%;height:${hh}%"><b>${esc(it.name)}</b><br><span>PCS ${it.unit} • ${size}${it.rot?' • ↻':''}</span></div>`;
+     return `<div class="piece${cls}" title="${esc(title)}" style="left:${x}%;top:${y}%;width:${ww}%;height:${hh}%">${$('labelsOn')?.checked!==false?`<b>${esc(it.name)}</b><br><span>PCS ${it.unit} • ${size}${it.rot?' • ↻':''}</span>`:`<b>PCS ${it.unit}</b>`}</div>`;
    }).join('');
    return `<div class="sheet">
      <div class="sheet-actions"><div><h3>Lembar ${i+1} — Multiplek ${s.thick} mm</h3><div class="sheet-sub">${(w/10).toFixed(1)} × ${(h/10).toFixed(1)} cm • ${s.items.length} PCS • Sisa ± ${(rem/10000).toFixed(2)} m²</div></div><span class="legend-item">${((usedSheet/(w*h))*100).toFixed(1)}% terpakai</span></div>
@@ -529,7 +613,7 @@ function addMaterial(){
  else materials.push({id:Date.now()+Math.random(),name,l,w,qty:q,unit,price,source:'manual'});
  saveLocal();renderAll();
 }
-function renderAll(){renderList();renderMaterials();renderHPP();renderResults()}
+function renderAll(){renderList();try{renderCuttingLayouts()}catch(e){$('cuttingLayouts').innerHTML=`<div class="empty">Layout gagal: ${esc(e.message||e)}</div>`;} }
 function projectData(){return{version:'2.0',project:$('project').value,customer:$('customer').value,sheet:$('sheetSize').value,kerf:$('kerf').value,paper:$('paper').value,orientation:$('orientation').value,wastePct:$('wastePct').value,laborCost:$('laborCost').value,finishingCost:$('finishingCost').value,transportCost:$('transportCost').value,hardwareCost:$('hardwareCost').value,otherCost:$('otherCost').value,productionOverhead:$('productionOverhead').value,profitPct:$('profitPct').value,discountPct:$('discountPct').value,effectiveArea:$('effectiveArea').value,hppMarkup:$('hppMarkup').value,parts,materials}}
 function saveLocal(){localStorage.setItem('cutlist_project_v2',JSON.stringify(projectData()));localStorage.setItem('cutlist_parts_v2',JSON.stringify(parts));localStorage.setItem('cutlist_materials_v2',JSON.stringify(materials))}
 function saveProject(){saveLocal();exportJSON();alert('Proyek tersimpan dan backup JSON dibuat.')}
@@ -541,7 +625,7 @@ $('hardwareCost').value=d.hardwareCost||0;$('otherCost').value=d.otherCost||0;$(
 $('profitPct').value=d.profitPct||25;$('discountPct').value=d.discountPct||0;
 $('effectiveArea').value=d.effectiveArea||28800;$('hppMarkup').value=d.hppMarkup||0;saveLocal();renderAll();alert('Proyek berhasil dimuat.')}catch(x){alert('File JSON tidak valid.')}};r.readAsText(f);e.target.value=''})
 function printPDF(){let p=$('paper').value,o=$('orientation').value,s={A4:'210mm 297mm',A3:'297mm 420mm',A5:'148mm 210mm',Letter:'216mm 279mm',Legal:'216mm 356mm'}[p];if(o==='landscape'){let a=s.split(' ');s=a[1]+' '+a[0]}let st=document.getElementById('ps')||document.createElement('style');st.id='ps';st.textContent='@page{size:'+s+';margin:10mm}';document.head.appendChild(st);window.print()}
-['wastePct','laborCost','finishingCost','transportCost','hardwareCost','otherCost','productionOverhead','profitPct','discountPct'].forEach(id=>$(id).addEventListener('input',()=>{saveLocal();renderAll()}));['sheetSize','kerf','project','customer','paper','orientation','effectiveArea','hppMarkup'].forEach(id=>$(id).addEventListener('input',()=>{saveLocal();renderAll()}));
+['wastePct','laborCost','finishingCost','transportCost','hardwareCost','otherCost','productionOverhead','profitPct','discountPct'].forEach(id=>$(id).addEventListener('input',()=>{saveLocal();renderAll()}));['sheetSize','kerf','project','customer','paper','orientation','effectiveArea','hppMarkup','stockLength','stockWidth','stockQty','stockLabel','labelsOn','grainOption','edgeOption','oneSheet'].forEach(id=>{const el=$(id);if(el)el.addEventListener('input',()=>{if(id==='grainOption' && el.checked)parts.forEach(p=>p.grain=true);saveLocal();renderAll()})});
 window.addEventListener('beforeprint',()=>{let p=$('paper').value,o=$('orientation').value,s={A4:'210mm 297mm',A3:'297mm 420mm',A5:'148mm 210mm',Letter:'216mm 279mm',Legal:'216mm 356mm'}[p]||'210mm 297mm';if(o==='landscape'){let a=s.split(' ');s=a[1]+' '+a[0]}let st=document.getElementById('ps')||document.createElement('style');st.id='ps';st.textContent='@page{size:'+s+';margin:10mm}';document.head.appendChild(st);});
 renderAll();
 </script>
